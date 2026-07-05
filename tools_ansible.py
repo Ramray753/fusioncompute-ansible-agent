@@ -1,3 +1,4 @@
+import os
 import chromadb
 import ollama
 from crewai.tools import tool
@@ -120,9 +121,6 @@ class AnsibleAutomationTools:
     # ==============================================================================
     # STAGE 6: NEW ANSIBLE PLAYBOOK BLUEPRINTS TOOL
     # ==============================================================================
-    # ==============================================================================
-    # STAGE 6: NEW ANSIBLE PLAYBOOK BLUEPRINTS TOOL (FIXED SPACE BUG)
-    # ==============================================================================
     @tool("6. Read Playbook Blueprints and Console Echoes")
     def read_ansible_code_blueprints() -> str:
         """
@@ -174,67 +172,80 @@ class AnsibleAutomationTools:
             return f"### Verified Vector Result: {matched_meta['heading']} (Source: {matched_meta['source']})\n{results['documents'][0][0]}"
         return f"No certified data specification discovered globally matching: '{target_heading_or_keyword}'."
 
+    # ==============================================================================
+    # STAGE 8: WRITE MODULAR PLAYBOOK PROJECT FILES
+    # ==============================================================================
+    @tool("8. Write Modular Playbook Project Files")
+    def write_modular_ansible_files(file_matrix: dict) -> str:
+        """
+        Use this tool as the absolute final step to write multiple separate Ansible automation files 
+        (e.g., playbooks, roles, variable structures, inventories) onto the disk simultaneously.
+        The input MUST be a flat dictionary where keys are filename strings and values are text strings.
+        Example: {"site.yml": "yaml...", "hosts.ini": "text...", "commons.yml": "yaml..."}
+        """
+        target_directory = "./output_ansible"
+        try:
+            os.makedirs(target_directory, exist_ok=True)
+            written_manifest = []
+            
+            for filename, file_content in file_matrix.items():
+                safe_filename = os.path.basename(filename)
+                full_write_path = os.path.join(target_directory, safe_filename)
+                
+                with open(full_write_path, "w", encoding="utf-8") as file_handle:
+                    file_handle.write(file_content)
+                written_manifest.append(safe_filename)
+                
+            return f"Success! Dynamic playbook layout completed. Created files: {written_manifest}"
+        except Exception as error:
+            return f"File I/O deployment failure: {str(error)}"
 
 # ==============================================================================
-# RIGOROUS 7-STAGE PIPELINE CELLULAR UNIT TEST MODULE
+# RIGOROUS 8-STAGE PIPELINE CELLULAR UNIT TEST MODULE
 # ==============================================================================
 if __name__ == "__main__":
-    print("\n" + "="*20 + " STARTING REFACTORED 7-STAGE ANSIBLE TOOLS AUDIT " + "="*20)
+    print("\n" + "="*20 + " STARTING SCHEME-A ANSIBLE TOOLS AUDIT " + "="*20)
     
-    # Test 1: Underlying API heading list directory
-    print("\n[STAGE 1] Running Tool 1: fetch_all_api_headings...")
+    # Stages 1-6 Basic Index & Specification Pull Checks
     try:
         api_dir = AnsibleAutomationTools.fetch_all_api_headings.run()
-        print(f"Success! Native API directory mapped. Excerpt:\n  " + "\n  ".join(api_dir.split("\n")[:3]) + "\n  ...")
-    except Exception as e: print(f"Failed Stage 1: {e}")
-        
-    # Test 2: Upper abstraction Ansible heading list directory
-    print("\n[STAGE 2] Running Tool 2: fetch_all_ansible_headings...")
-    try:
         ansible_dir = AnsibleAutomationTools.fetch_all_ansible_headings.run()
-        print(f"Success! Ansible module directory mapped. Excerpt:\n  " + "\n  ".join(ansible_dir.split("\n")[:3]) + "\n  ...")
-    except Exception as e: print(f"Failed Stage 2: {e}")
-
-    # Test 3: Raw REST protocols
-    print("\n[STAGE 3] Running Tool 3: read_api_format_specification...")
-    try:
+        print(f"\n[STAGE 1-2] Global maps retrieved. API items: {len(api_dir.splitlines())}, Ansible items: {len(ansible_dir.splitlines())}")
+        
         api_spec = AnsibleAutomationTools.read_api_format_specification.run()
-        print(f"Success! Base API specs acquired. Excerpt:\n{api_spec[:150]}...\n")
-    except Exception as e: print(f"Failed Stage 3: {e}")
-
-    # Test 4: Ansible modules authentication framework rules
-    print("\n[STAGE 4] Running Tool 4: read_ansible_module_specification...")
-    try:
         ansible_spec = AnsibleAutomationTools.read_ansible_module_specification.run()
-        print(f"Success! Core Ansible architecture specs acquired. Excerpt:\n{ansible_spec[:200]}...\n")
-    except Exception as e: print(f"Failed Stage 4: {e}")
+        print(f"[STAGE 3-4] Baseline frameworks mapped. Data sizes: {len(api_spec)} / {len(ansible_spec)}")
+        
+        api_blue = AnsibleAutomationTools.read_api_code_blueprints.run()
+        ansible_blue = AnsibleAutomationTools.read_ansible_code_blueprints.run()
+        print(f"[STAGE 5-6] Template design blueprints mapped. Data sizes: {len(api_blue)} / {len(ansible_blue)}")
+    except Exception as e: print(f"Basic stages setup error: {e}")
 
-    # Test 5: Underlying curl response blueprints
-    print("\n[STAGE 5] Running Tool 5: read_api_code_blueprints...")
-    try:
-        api_blueprints = AnsibleAutomationTools.read_api_code_blueprints.run()
-        print(f"Success! API response code blueprints isolated. Excerpt:\n{api_blueprints[:150]}...\n")
-    except Exception as e: print(f"Failed Stage 5: {e}")
-
-    # Test 6: Upper playbook architectures blueprints
-    print("\n[STAGE 6] Running Tool 6: read_ansible_code_blueprints...")
-    try:
-        ansible_blueprints = AnsibleAutomationTools.read_ansible_code_blueprints.run()
-        print(f"Success! YAML playbook blueprint models mapped. Excerpt:\n{ansible_blueprints[:150]}...\n")
-    except Exception as e: print(f"Failed Stage 6: {e}")
-
-    # Test 7 - Case A: Querying an Ansible native module module fields
-    print("\n[STAGE 7A] Running Tool 7 globally for native module 'fc_vm_lifecycle_manager'...")
+    # [STAGE 7 TEST] Unified Search Deep Dive
+    print("\n[STAGE 7] Running Tool 7 Globally for cross-document sync...")
     try:
         res_a = AnsibleAutomationTools.query_specific_section_content.run(target_heading_or_keyword="fc_vm_lifecycle_manager")
-        print(f"Success! Native Module Schema found:\n{res_a[:180]}...\n")
-    except Exception as e: print(f"Failed Stage 7A: {e}")
-
-    # Test 7 - Case B: Querying an underlying REST API endpoint fields (Bridge simulation for fc_generic)
-    print("[STAGE 7B] Running Tool 7 globally for raw API fallback '修改站点高级配置'...")
-    try:
         res_b = AnsibleAutomationTools.query_specific_section_content.run(target_heading_or_keyword="修改站点高级配置")
-        print(f"Success! Cross-Document REST Parameter Bridge achieved for fc_generic:\n{res_b[:180]}...\n")
-    except Exception as e: print(f"Failed Stage 7B: {e}")
+        print(f"  Pass: Isolated Native module block and Native REST API block successfully. Data sizes: {len(res_a)} / {len(res_b)}")
+    except Exception as e: print(f"  Failed Stage 7: {e}")
 
-    print("="*19 + " REFACTORED 7-STAGE ANSIBLE TOOLS ALL GREEN " + "="*19 + "\n")
+    # 🎯 [STAGE 8 TEST] NEW: Validate dynamic playbook structures generation
+    print("\n[STAGE 8] Running New Tool 8: write_modular_ansible_files...")
+    try:
+        import os
+        mock_playbook_environment = {
+            "site.yml": "---\n- name: Deploy Cluster\n  hosts: all\n  tasks:\n    - name: Trigger generic fallback\n",
+            "hosts.ini": "[vrm_nodes]\n192.168.1.10\n",
+            "group_vars_all.yml": "ansible_user: admin\n"
+        }
+        io_result = AnsibleAutomationTools.write_modular_ansible_files.run(file_matrix=mock_playbook_environment)
+        print(f"  Feedback: {io_result}")
+        
+        # Verify physical disk presence
+        assert os.path.exists("./output_ansible/site.yml"), "Physical IO error: site.yml missing."
+        assert os.path.exists("./output_ansible/hosts.ini"), "Physical IO error: hosts.ini missing."
+        print("  Pass: Local file permissions and multi-playbook pipeline fully cleared.")
+    except Exception as e:
+        print(f"  Failed Stage 8: {e}")
+
+    print("="*19 + " ANSIBLE AUTOMATION TOOLS 8-STAGE VALIDATED " + "="*19 + "\n")

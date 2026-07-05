@@ -1,3 +1,4 @@
+import os
 import chromadb
 import ollama
 from crewai.tools import tool
@@ -124,49 +125,85 @@ class PythonRestTools:
         if results and results["documents"] and results["documents"][0]:
             return results["documents"][0][0]
         return f"No certified technical details found matching keyword: '{target_heading_or_keyword}'."
+    
+
+    @tool("5. Write Modular Python Project Files")
+    def write_modular_python_files(file_matrix: dict) -> str:
+        """
+        Use this tool as the absolute final step to write multiple separate Python scripts 
+        simultaneously onto the local disk to achieve clean modular abstraction.
+        The input MUST be a flat dictionary where keys are filename strings and values are code strings.
+        Example: {"auth.py": "code...", "poller.py": "code...", "main.py": "code..."}
+        """
+        target_directory = "./output_python"
+        try:
+            os.makedirs(target_directory, exist_ok=True)
+            written_manifest = []
+            
+            for filename, file_content in file_matrix.items():
+                # Enforce basic sanitation to eliminate directory traversal risks
+                safe_filename = os.path.basename(filename)
+                full_write_path = os.path.join(target_directory, safe_filename)
+                
+                with open(full_write_path, "w", encoding="utf-8") as file_handle:
+                    file_handle.write(file_content)
+                written_manifest.append(safe_filename)
+                
+            return f"Success! Dynamic project deployment completed. Created files: {written_manifest}"
+        except Exception as error:
+            return f"File I/O deployment failure: {str(error)}"
 
 
 # ==============================================================================
-# RIGOROUS 4-STAGE PIPELINE CELLULAR UNIT TEST MODULE
+# RIGOROUS 5-STAGE PIPELINE CELLULAR UNIT TEST MODULE
 # ==============================================================================
 if __name__ == "__main__":
-    print("\n" + "="*20 + " STARTING REFACTORED PYTHON TOOLS AUDIT " + "="*20)
+    print("\n" + "="*20 + " STARTING SCHEME-A PYTHON TOOLS AUDIT " + "="*20)
     
     # [STAGE 1 TEST] Fetching global index directory map
     print("\n[STAGE 1] Running Tool 1: fetch_all_api_headings...")
     try:
         directory_dump = PythonRestTools.fetch_all_api_headings.run()
-        print("Success! Headings directory mapped. Sample excerpt below:")
-        lines = directory_dump.split("\n")
-        for line in lines[:8]: # Display first few elements
-            print(f"  {line}")
-        print(f"  ... [Total lines indexed: {len(lines)}]")
-    except Exception as e:
-        print(f"Failed Stage 1: {e}")
+        print(f"  Success! Total lines indexed: {len(directory_dump.splitlines())}")
+    except Exception as e: print(f"  Failed Stage 1: {e}")
         
-    # [STAGE 2 TEST] Fetching global specs and base URL pathways
+    # [STAGE 2 TEST] Fetching global specs
     print("\n[STAGE 2] Running Tool 2: read_api_format_specification...")
     try:
         format_spec = PythonRestTools.read_api_format_specification.run()
-        print(f"Success! Base specification acquired. Excerpt:\n{format_spec[:300]}...\n")
-    except Exception as e:
-        print(f"Failed Stage 2: {e}")
+        print(f"  Success! Base specification acquired. (Length: {len(format_spec)})")
+    except Exception as e: print(f"  Failed Stage 2: {e}")
 
-    # [STAGE 3 TEST] Fetching real-world coding benchmarks and JSON mocks
+    # [STAGE 3 TEST] Fetching real-world coding benchmarks
     print("\n[STAGE 3] Running Tool 3: read_api_code_blueprints...")
     try:
         blueprints = PythonRestTools.read_api_code_blueprints.run()
-        print(f"Success! Execution blueprint copy achieved. Excerpt:\n{blueprints[:300]}...\n")
-    except Exception as e:
-        print(f"Failed Stage 3: {e}")
+        print(f"  Success! Execution blueprint achieved. (Length: {len(blueprints)})")
+    except Exception as e: print(f"  Failed Stage 3: {e}")
 
-    # [STAGE 4 TEST] Repeatable deep dive lookup for a single functional component
+    # [STAGE 4 TEST] Repeatable deep dive lookup
     test_target = "创建数据存储"
     print(f"\n[STAGE 4] Running Tool 4: query_specific_section_content for '{test_target}'...")
     try:
         detailed_schema = PythonRestTools.query_specific_section_content.run(target_heading_or_keyword=test_target)
-        print(f"Success! Component Schema isolated perfectly:\n{detailed_schema[:400]}...\n")
-    except Exception as e:
-        print(f"Failed Stage 4: {e}")
+        print(f"  Success! Component Schema isolated perfectly. (Length: {len(detailed_schema)})")
+    except Exception as e: print(f"  Failed Stage 4: {e}")
 
-    print("="*19 + " PYTHON REST TOOLS 4-STAGE PIPELINE VALIDATED " + "="*19 + "\n")
+    # 🎯 [STAGE 5 TEST] NEW: Validate dynamic multi-file generation capabilities
+    print("\n[STAGE 5] Running New Tool 5: write_modular_python_files...")
+    try:
+        mock_project_files = {
+            "test_session.py": "# Asynchronous session tracking\ndef get_token(): pass\n",
+            "test_storage.py": "# Deep storage manipulation\ndef add_storage(): pass\n"
+        }
+        io_result = PythonRestTools.write_modular_python_files.run(file_matrix=mock_project_files)
+        print(f"  Feedback: {io_result}")
+        
+        # Verify physical disk presence
+        assert os.path.exists("./output_python/test_session.py"), "Physical IO error: test_session.py missing."
+        assert os.path.exists("./output_python/test_storage.py"), "Physical IO error: test_storage.py missing."
+        print("  Pass: Local file permissions and multi-file pipeline fully cleared.")
+    except Exception as e:
+        print(f"  Failed Stage 5: {e}")
+
+    print("="*18 + " PYTHON REST TOOLS 5-STAGE PIPELINE VALIDATED " + "="*18 + "\n")
