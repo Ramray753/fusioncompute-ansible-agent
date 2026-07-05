@@ -12,7 +12,7 @@ class AnsibleAutomationTools:
     # ==============================================================================
     # STAGE 1: REST API DIRECTORY INDEX (REUSED FROM PYTHON TOOLS WITH RE-ALIGNED DOCS)
     # ==============================================================================
-    @tool("1. Fetch All REST API Headings")
+    @tool("fetch_all_api_headings")
     def fetch_all_api_headings() -> str:
         """
         MANDATORY FIRST STEP. Use this tool to retrieve the complete directory index (all section headings) 
@@ -34,7 +34,7 @@ class AnsibleAutomationTools:
     # ==============================================================================
     # STAGE 2: NEW ANSIBLE DIRECTORY INDEX TOOL
     # ==============================================================================
-    @tool("2. Fetch All Ansible Module Headings")
+    @tool("fetch_all_ansible_headings")
     def fetch_all_ansible_headings() -> str:
         """
         MANDATORY SECOND STEP. Use this tool to retrieve the complete directory index (all section headings) 
@@ -56,7 +56,7 @@ class AnsibleAutomationTools:
     # ==============================================================================
     # STAGE 3: REST API SPECIFICATION LOOKUP (REUSED FROM PYTHON TOOLS WITH RE-ALIGNED DOCS)
     # ==============================================================================
-    @tool("3. Read Global API Format Specification")
+    @tool("read_api_format_specification")
     def read_api_format_specification() -> str:
         """
         MANDATORY THIRD STEP. Use this tool to read the core specifications under the heading 'API接口格式'. 
@@ -77,7 +77,7 @@ class AnsibleAutomationTools:
     # ==============================================================================
     # STAGE 4: NEW ANSIBLE AUTH & FRAMEWORK SPECIFICATION TOOL
     # ==============================================================================
-    @tool("4. Read Global Ansible Module Specification")
+    @tool("read_ansible_module_specification")
     def read_ansible_module_specification() -> str:
         """
         MANDATORY FOURTH STEP. Use this tool to read global framework mechanics inside the Ansible document. 
@@ -100,7 +100,7 @@ class AnsibleAutomationTools:
     # ==============================================================================
     # STAGE 5: REST API BLUEPRINTS LOOKUP (REUSED FROM PYTHON TOOLS WITH RE-ALIGNED DOCS)
     # ==============================================================================
-    @tool("5. Read End-to-End API Code Blueprints")
+    @tool("read_api_code_blueprints")
     def read_api_code_blueprints() -> str:
         """
         MANDATORY FIFTH STEP. Use this tool to inspect raw shell cURL blocks and real terminal JSON responses under 'API调用代码示例'. 
@@ -121,7 +121,7 @@ class AnsibleAutomationTools:
     # ==============================================================================
     # STAGE 6: NEW ANSIBLE PLAYBOOK BLUEPRINTS TOOL
     # ==============================================================================
-    @tool("6. Read Playbook Blueprints and Console Echoes")
+    @tool("read_ansible_code_blueprints")
     def read_ansible_code_blueprints() -> str:
         """
         MANDATORY SIXTH STEP. Use this tool to read production-grade YAML template architectures and terminal 
@@ -146,7 +146,7 @@ class AnsibleAutomationTools:
     # ==============================================================================
     # STAGE 7: UNIFIED GLOBAL DEEP DIVE LOOKUP TOOL (MERGED)
     # ==============================================================================
-    @tool("7. Query Specific Section Content Globally")
+    @tool("query_specific_section_content")
     def query_specific_section_content(target_heading_or_keyword: str) -> str:
         """
         UNIFIED LOOKUP ENGINE. Use this tool repeatedly to extract the exact schemas, 
@@ -175,7 +175,7 @@ class AnsibleAutomationTools:
     # ==============================================================================
     # STAGE 8: WRITE MODULAR PLAYBOOK PROJECT FILES
     # ==============================================================================
-    @tool("8. Write Modular Playbook Project Files")
+    @tool("write_modular_ansible_files")
     def write_modular_ansible_files(file_matrix: dict) -> str:
         """
         Use this tool as the absolute final step to write multiple separate Ansible automation files 

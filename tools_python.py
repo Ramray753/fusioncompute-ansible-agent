@@ -9,7 +9,7 @@ class PythonRestTools:
     discovery stages to enforce perfect API architectural alignment.
     """
 
-    @tool("1. Fetch All Available Document Headings")
+    @tool("fetch_all_api_headings")
     def fetch_all_api_headings() -> str:
         """
         Use this tool to retrieve the complete directory index (all section headings) 
@@ -42,7 +42,7 @@ class PythonRestTools:
         return "\n".join(formatted_directory)
 
 
-    @tool("2. Read Global API Format Specification")
+    @tool("read_api_format_specification")
     def read_api_format_specification() -> str:
         """
         Use this tool to read the entire baseline specification under the top-level heading 'API接口格式'. 
@@ -69,7 +69,7 @@ class PythonRestTools:
         return "Global API formatting specifications are currently missing or unindexed."
 
 
-    @tool("3. Read End-to-End Programming Blueprints")
+    @tool("read_api_code_blueprints")
     def read_api_code_blueprints() -> str:
         """
         Use this tool to read the complete context under the top-level heading 'API调用代码示例'. 
@@ -94,7 +94,7 @@ class PythonRestTools:
         return "Official programming blueprint examples are missing or unindexed."
 
 
-    @tool("4. Query Specific Section Content by Heading or Keyword")
+    @tool("query_specific_section_content")
     def query_specific_section_content(target_heading_or_keyword: str) -> str:
         """
         Retrieves the exact parameter tables, data schemas, and specifications for a single endpoint section. 
@@ -127,7 +127,7 @@ class PythonRestTools:
         return f"No certified technical details found matching keyword: '{target_heading_or_keyword}'."
     
 
-    @tool("5. Write Modular Python Project Files")
+    @tool("write_modular_python_files")
     def write_modular_python_files(file_matrix: dict) -> str:
         """
         Use this tool as the absolute final step to write multiple separate Python scripts 
