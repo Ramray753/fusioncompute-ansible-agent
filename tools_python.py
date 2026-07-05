@@ -5,16 +5,15 @@ from crewai.tools import tool
 
 class PythonRestTools:
     """
-    Certified Python REST API Toolset structured with mandatory progressive 
-    discovery stages to enforce perfect API architectural alignment.
+    Certified Python REST API Toolset providing granular, stateless capabilities 
+    to interface with the underlying FusionCompute knowledge base.
     """
 
     @tool("fetch_all_api_headings")
     def fetch_all_api_headings() -> str:
         """
-        Use this tool to retrieve the complete directory index (all section headings) 
-        of the FusionCompute REST API document. This allows building an internal knowledge map 
-        and selecting the most relevant sections before querying specifics. Executed once.
+        Retrieves the complete directory index containing all section headings of the 
+        FusionCompute REST API document. This helps map out the available platform endpoints.
         """
         chroma_client = chromadb.PersistentClient(path="./chroma_db")
         try:
@@ -22,13 +21,11 @@ class PythonRestTools:
         except Exception as e:
             return f"Database connection error: {str(e)}"
             
-        # Extract metadata matrix strictly bounded to the REST API source document
         all_records = collection.get(
             where={"source": "fusioncompute_8100_api_cleaned.docx"},
             include=["metadatas"]
         )
         
-        # Deduplicate and sort heading keys in original structural sequence
         seen_headings = []
         for meta in all_records.get("metadatas", []):
             h_path = meta.get("heading", "")
@@ -45,9 +42,9 @@ class PythonRestTools:
     @tool("read_api_format_specification")
     def read_api_format_specification() -> str:
         """
-        Use this tool to read the entire baseline specification under the top-level heading 'API接口格式'. 
-        Provides mandatory knowledge regarding global HTTP request lines, headers, response status structures, 
-        and global base URL pathway configurations. Executed once.
+        Reads the baseline communication specification under the heading 'API接口格式'. 
+        Provides technical details regarding HTTP request lines, headers, response status codes, 
+        and base URL pathway structures.
         """
         chroma_client = chromadb.PersistentClient(path="./chroma_db")
         collection = chroma_client.get_collection(name="ansible_agent_knowledge")
@@ -60,7 +57,6 @@ class PythonRestTools:
         matched_chunks = []
         for idx, meta in enumerate(all_records.get("metadatas", [])):
             heading = meta.get("heading", "")
-            # Lock content down strictly to the global interface standards sections
             if "API接口格式" in heading:
                 matched_chunks.append(f"### Section: {heading}\n{all_records['documents'][idx]}")
                 
@@ -72,9 +68,8 @@ class PythonRestTools:
     @tool("read_api_code_blueprints")
     def read_api_code_blueprints() -> str:
         """
-        Use this tool to read the complete context under the top-level heading 'API调用代码示例'. 
-        Provides raw bash cURL integration scripts and real terminal JSON responses. 
-        Analyze this to understand payload nesting and token extraction before code design. Executed once.
+        Reads the technical context and code syntax examples under the heading 'API调用代码示例'. 
+        Provides raw bash cURL integration scripts and corresponding JSON response schemas.
         """
         chroma_client = chromadb.PersistentClient(path="./chroma_db")
         collection = chroma_client.get_collection(name="ansible_agent_knowledge")
@@ -97,22 +92,19 @@ class PythonRestTools:
     @tool("query_specific_section_content")
     def query_specific_section_content(target_heading_or_keyword: str) -> str:
         """
-        Retrieves the exact parameter tables, data schemas, and specifications for a single endpoint section. 
-        Input should be an exact heading string found in Tool 1 (e.g., '计算虚拟化接口 -> 虚拟机管理 -> 创建虚拟机') 
-        or a strong domain keyword (e.g., '创建数据存储'). Executed multiple times as needed.
+        Retrieves the exact parameter tables, data structures, and schemas for a single target endpoint 
+        section using a precise heading path or a domain keyword.
         """
         chroma_client = chromadb.PersistentClient(path="./chroma_db")
         collection = chroma_client.get_collection(name="ansible_agent_knowledge")
         
         filter_condition = {"source": "fusioncompute_8100_api_cleaned.docx"}
         
-        # CHANNEL 1: High-speed literal match loop to guarantee perfect routing precision
         all_records = collection.get(where=filter_condition, include=["metadatas", "documents"])
         for idx, meta in enumerate(all_records.get("metadatas", [])):
             if target_heading_or_keyword.strip() in meta.get("heading", ""):
                 return f"### Verified Schema: {meta['heading']}\n{all_records['documents'][idx]}"
                 
-        # CHANNEL 2: Fallback to high-precision Cosine Vector Search if literal matching misses
         nomic_safe_query = f"search_query: {target_heading_or_keyword}"
         response = ollama.embeddings(model="nomic-embed-text", prompt=nomic_safe_query)
         
@@ -130,10 +122,8 @@ class PythonRestTools:
     @tool("write_modular_python_files")
     def write_modular_python_files(file_matrix: dict) -> str:
         """
-        Use this tool as the absolute final step to write multiple separate Python scripts 
-        simultaneously onto the local disk to achieve clean modular abstraction.
-        The input MUST be a flat dictionary where keys are filename strings and values are code strings.
-        Example: {"auth.py": "code...", "poller.py": "code...", "main.py": "code..."}
+        Writes multiple separate Python script files simultaneously onto the local disk. 
+        Accepts a flat dictionary mapping filename strings to code content strings.
         """
         target_directory = "./output_python"
         try:
@@ -141,7 +131,6 @@ class PythonRestTools:
             written_manifest = []
             
             for filename, file_content in file_matrix.items():
-                # Enforce basic sanitation to eliminate directory traversal risks
                 safe_filename = os.path.basename(filename)
                 full_write_path = os.path.join(target_directory, safe_filename)
                 
@@ -155,7 +144,7 @@ class PythonRestTools:
 
 
 # ==============================================================================
-# RIGOROUS 5-STAGE PIPELINE CELLULAR UNIT TEST MODULE
+# PIPELINE INTEGRITY UNIT TEST MODULE
 # ==============================================================================
 if __name__ == "__main__":
     print("\n" + "="*20 + " STARTING SCHEME-A PYTHON TOOLS AUDIT " + "="*20)
@@ -189,7 +178,7 @@ if __name__ == "__main__":
         print(f"  Success! Component Schema isolated perfectly. (Length: {len(detailed_schema)})")
     except Exception as e: print(f"  Failed Stage 4: {e}")
 
-    # 🎯 [STAGE 5 TEST] NEW: Validate dynamic multi-file generation capabilities
+    # [STAGE 5 TEST] Validate dynamic multi-file generation capabilities
     print("\n[STAGE 5] Running New Tool 5: write_modular_python_files...")
     try:
         mock_project_files = {
@@ -198,8 +187,6 @@ if __name__ == "__main__":
         }
         io_result = PythonRestTools.write_modular_python_files.run(file_matrix=mock_project_files)
         print(f"  Feedback: {io_result}")
-        
-        # Verify physical disk presence
         assert os.path.exists("./output_python/test_session.py"), "Physical IO error: test_session.py missing."
         assert os.path.exists("./output_python/test_storage.py"), "Physical IO error: test_storage.py missing."
         print("  Pass: Local file permissions and multi-file pipeline fully cleared.")
