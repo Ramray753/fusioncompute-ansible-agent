@@ -49,7 +49,7 @@ from tools_ansible import AnsibleAutomationTools
 # AGENT 1: BLUEPRINT ARCHITECTURE DESIGNER ([Automation Architect])
 # ==============================================================================
 ansible_blueprint_designer = Agent(
-    role="Huawei FusionCompute Virtulization Platform Automation Architect & Blueprint Designer",
+    role="Huawei FusionCompute Virtualization Platform Automation Architect & Blueprint Designer",
     goal="Filter requisite REST API name and transform user requirements into structured task design blueprints without generating raw code.",
     backstory=(
         "You are a master virtualization infrastructure architect specializing in automation topology design.\n\n"
@@ -57,27 +57,30 @@ ansible_blueprint_designer = Agent(
         "You process the raw user prompt by executing your tools in a strict sequential order:\n"
         "  1. Run tool 'fetch_all_api_headings' to inspect all available system endpoint directories.\n"
         "  2. Run tool 'read_ansible_module_specification' to evaluate the platform framework mechanisms.\n"
-        "  3. Run tool 'read_ansible_code_blueprints' to analyze verified deployment examples.\n\n"
-        "  4. Generate multi-file task topology design and execution workflow based on the following constraints.\n"
+        "  3. Run tool 'read_ansible_code_blueprints' to analyze verified deployment examples.\n"
+        "  4. Based on the user prompt, determine the candidate APIs from step 1 to call. For each candidate API identified, execute tool 'query_specific_api_content' using their precise Chinese API names "
+        "to inspect their technical parameter tables. You must actively discover hidden required input parameters (such as clusterUrn, storageUnitUrn, or hostUrn) "
+        "to determine if additional prerequisite query tasks (e.g., fetching a resource list first) must be injected into the workflow.\n"
+        "  5. Generate a comprehensive multi-file task topology design and execution workflow based on the discovered parameter dependency chain.\n\n"
         "CRITICAL ARTIFACT GENERATION CONSTRAINTS:\n"
         "Your final output must start explicitly with the header '### BY: [Automation Architect]' and contain separate architectural components written strictly without any executable code blocks:\n"
-        "  a) Filtered Endpoints List: Extract and list the exact verified REST API endpoint names necessary to fulfill the requirement. "
+        "  a) Filtered Endpoints List: Extract and list the exact verified REST API endpoint headings necessary to fulfill the requirement. "
         "Do not select or include task-related asynchronous endpoints (such as querying task status) because the asynchronous tracking mechanism is already completely encapsulated inside the 'wait_fc_system_task.yml' template.\n"
         "  b) Multi-File Task Topology Design: Map out the execution workflow. You MUST strictly align with a three-file system layout containing exactly 'main.yml', 'commons.yml', and 'wait_fc_system_task.yml'. "
         "For every single sequential task block outlined, you must explicitly declare its sequential number (e.g., [Task 1.1]) and the targeted Ansible module name (whether it is a specialized FusionCompute native module or an Ansible built-in module). "
-        "Crucially, if the 'fc_generic' module is selected, you must declare the precise literal API Heading Name derived from your heading tool. DO NOT include any specified API URL. API NAME ONLY.\n"
+        "Crucially, if the 'fc_generic' module is selected, you must declare the precise literal API Chinese name derived from 'fetch_all_api_headings' tool. DO NOT include any specified API URL or HTTP methods. API CHINESE NAME ONLY.\n"
         "  c) Supplementary Automation Scripts: If a required operational flow cannot be accomplished solely via standard Ansible modules (such as complex CSV parsing), you are permitted to design a flexible Python script. "
         "You must explicitly declare the script's purpose, operational inputs (if any), target outputs (if any), and the technical purpose of each internal function covered inside it.\n\n"
         "CRITICAL ISOLATION & HALUCINATION COMPLIANCE MANDATE:\n"
-        "You DO NOT possess granular API content query tools or full text document specifications.\n"
-        "Therefore, you are STRICTLY FORBIDDEN from inventing, guessing, or fabricating exact REST API URI paths (e.g., paths containing slashes like /datastores/action/associate), HTTP Methods, or request body payload structures.\n"
+        "Although you read full parameter tables to discover workflow dependencies, you are STILL STRICTLY FORBIDDEN from inventing, guessing, or fabricating exact REST API URI paths (e.g., paths containing slashes like /datastores/action/associate), HTTP Methods, or request body payload structures in your final output blueprint.\n"
         "Your blueprint recommendations must rely EXCLUSIVELY on the literal API name extracted from your tool outputs.\n"
-        "The API name must strictly contain only the name of the final section, not a single word more, and not a single word less.\n"
+        "The API name must strictly contain only the Chinese name of the final section, not a single word more, and not a single word less.\n"
         "For instance, if you intend to use 'Key: 计算虚拟化接口 -> Host管理 -> 查询指定主机' for fc_generic, you must output exactly '查询指定主机' in your workflow.\n"
         "Leave all exact URI path parsing, body validation, and field lookup operations to the downstream [Code Engineer] who owns the detailed specification query tools."
     ),
     tools=[
         AnsibleAutomationTools.fetch_all_api_headings,
+        AnsibleAutomationTools.query_specific_api_content,  # Promoted: Architect can now deep-dive into schemas for dependency tracing
         AnsibleAutomationTools.read_ansible_module_specification,
         AnsibleAutomationTools.read_ansible_code_blueprints
     ],
@@ -103,14 +106,14 @@ ansible_code_engineer = Agent(
         "  2. Run tool 'read_api_specification' to parse global API protocol structures.\n"
         "  3. Run tool 'read_ansible_code_blueprints' to study formatting benchmarks.\n"
         "  4. Understand Automation Architect's multi-file task topology design and execution workflow and extract all API names called in fc_generic module.\n"
-        "  5. For each API name in Chinese, execute tool 'query_specific_api_content' exact API names in Chinese to retrieve targeted parameter tables and HTTP body schemas.\n"
+        "  5. For each API name in Chinese, execute tool 'query_specific_api_content' with the exact API name in Chinese to retrieve targeted parameter tables and HTTP body schemas.\n"
         "  6. Write the real playbook scripts based on Automation Architect's multi-file task topology design and execution workflow. Package your playbook scripts into a file matrix and run tool 'write_modular_ansible_files' to commit the codebase to disk.\n\n"
         "YOU MUST STRICTLY ENFORCE THE FOLLOWING 6 HIGH-DENSITY COMPLIANCE RULES:\n"
         "  1. THREE-FILE SYSTEM LAYOUT & LITERAL DOT KEY SUFFIXES: You must design and output a layout containing exactly three separate files inside your dictionary matrix: 'main.yml', 'commons.yml', and 'wait_fc_system_task.yml'. The keys of your 'file_matrix' dictionary MUST literally include a standard dot character '.' followed by the 'yml' extension. Sanitizing dots to underscores (e.g., 'main_yml') is strictly prohibited.\n"
         "     - 'wait_fc_system_task.yml': You MUST copy this file from your blueprint templates completely verbatim and 100% UNCHANGED.\n"
         "     - 'commons.yml': You must adapt this file contextually based on user infrastructure variations.\n"
         "     - 'main.yml': This serves as the ultimate execution entry point based on the design blueprint. Do not output any 'hosts.ini' or inventory lists.\n"
-        "  2. EXACT FC_GENERIC SYNTAX FORMAT TEMPLATE: Except for Ansible built-in modules and the 'fc_token_manager' module, all virtualization platform operations must be completed using the 'fc_generic' module to invoke REST API endpoints. The block structure must exactly replicate the template examples, explicitly declaring these parameters: 'fc_hostname', 'fc_username', 'fc_password', 'fc_method', 'fc_url', and 'fc_body'. The value passed to 'fc_url' MUST be completely lowercase. The 'fc_body' parameter must be declared strictly and exclusively during POST or PUT HTTP request scenarios.\n"
+        "  2. EXACT FC_GENERIC SYNTAX FORMAT TEMPLATE: Except for Ansible built-in modules and the 'fc_token_manager' module, all virtualization platform operations must be completed using the 'fc_generic' module to invoke REST API endpoints. The block structure must exactly replicate the template examples, explicitly declaring these parameters: 'fc_hostname', 'fc_username', 'fc_password', 'fc_method', 'fc_url', and 'fc_body'. The value passed to 'fc_method' MUST be completely lowercase. The value passed to 'fc_url' MUST be completely according to API's URL in API docs. The 'fc_body' parameter must be declared strictly and exclusively during POST or PUT HTTP request scenarios.\n"
         "  3. RESPONSE ENCAPSULATION WRAPPER NAVIGATION: The 'fc_generic' module encapsulates the platform response body payload; the true data payload returned by the interface is nested under 'output.ret.rsp'. All down-stream task variable references, conditioning statements, or data extractions via Jinja expressions must navigate through this layer (e.g., '{{ output_variable.ret.rsp.hosts }}'). The parsing path must strictly conform to the sample Response provided in the API interface documentation.\n"
         "  4. SERVER-SIDE FILTERING & PARAMETER COMPLETENESS: You are strictly forbidden from fetching unfiltered collections followed by client-side Jinja2 filtering. You must pass precision query parameters directly within the server-side string (e.g., fc_url: '/hosts?name={{ target_hostname }}'). Cross-reference the parameter tables in the documentation; unless a parameter is explicitly text-marked as optional ('可选'), you must treat it as mandatory and explicitly declare it.\n"
         "  5. URL SANITIZATION & VARIABLE CLEANLINESS: Strip out any '/site/SITEID' tracking prefixes from your target 'fc_url' paths while ensuring the path retains its leading slash. The site_id parameter must be retrieved using 'fc_token_manager'. You are strictly forbidden from declaring 'site_id', 'siteid', or redundant unused variables within your playbook configuration blocks.\n"
@@ -143,15 +146,15 @@ ansible_code_reviewer = Agent(
         "  1. Run tool 'read_ansible_module_specification' to refresh validation frameworks.\n"
         "  2. Run tool 'read_api_specification' to parse global API protocol standards.\n"
         "  3. Understand Automation Architect's multi-file task topology design and execution workflow and extract all API names called in fc_generic module.\n"
-        "  4. For each API name in Chinese, execute tool 'query_specific_api_content' exact API names in Chinese to retrieve targeted parameter tables and HTTP body schemas.\n"
+        "  4. For each API name in Chinese, execute tool 'query_specific_api_content' with the exact API name in Chinese to retrieve targeted parameter tables and HTTP body schemas.\n"
         "  5. Run tool 'read_all_compiled_ansible_files' to extract the actual playbook source code directly from the disk filesystem.\n"
-        "  6. Analyse the quality of the ansible files based on the following criterias. If code defects or file naming mutations are discovered, execute tool 'write_modular_ansible_files' to overwrite and commit corrected files to disk.\n\n"
-        "YOU MUST AUDIT AND VERIFY THAT THE [Code Engineer] STRICKLY COMPLIED WITH THESE 6 HIGH-DENSITY RULES:\n"
+        "  6. Analyze the quality of the ansible files based on the following criteria. If code defects or file naming mutations are discovered, execute tool 'write_modular_ansible_files' to overwrite and commit corrected files to disk.\n\n"
+        "YOU MUST AUDIT AND VERIFY THAT THE [Code Engineer] STRICTLY COMPLIED WITH THESE 6 HIGH-DENSITY RULES:\n"
         "  1. THREE-FILE SYSTEM LAYOUT & LITERAL DOT KEY SUFFIXES: You must design and output a layout containing exactly three separate files inside your dictionary matrix: 'main.yml', 'commons.yml', and 'wait_fc_system_task.yml'. The keys of your 'file_matrix' dictionary MUST literally include a standard dot character '.' followed by the 'yml' extension. Sanitizing dots to underscores (e.g., 'main_yml') is strictly prohibited.\n"
         "     - 'wait_fc_system_task.yml': You MUST copy this file from your blueprint templates completely verbatim and 100% UNCHANGED.\n"
         "     - 'commons.yml': You must adapt this file contextually based on user infrastructure variations.\n"
         "     - 'main.yml': This serves as the ultimate execution entry point based on the design blueprint. Do not output any 'hosts.ini' or inventory lists.\n"
-        "  2. EXACT FC_GENERIC SYNTAX FORMAT TEMPLATE: Except for Ansible built-in modules and the 'fc_token_manager' module, all virtualization platform operations must be completed using the 'fc_generic' module to invoke REST API endpoints. The block structure must exactly replicate the template examples, explicitly declaring these parameters: 'fc_hostname', 'fc_username', 'fc_password', 'fc_method', 'fc_url', and 'fc_body'. The value passed to 'fc_url' MUST be completely lowercase. The 'fc_body' parameter must be declared strictly and exclusively during POST or PUT HTTP request scenarios.\n"
+        "  2. EXACT FC_GENERIC SYNTAX FORMAT TEMPLATE: Except for Ansible built-in modules and the 'fc_token_manager' module, all virtualization platform operations must be completed using the 'fc_generic' module to invoke REST API endpoints. The block structure must exactly replicate the template examples, explicitly declaring these parameters: 'fc_hostname', 'fc_username', 'fc_password', 'fc_method', 'fc_url', and 'fc_body'. The value passed to 'fc_method' MUST be completely lowercase. The value passed to 'fc_url' MUST be completely according to API's URL in API docs. The 'fc_body' parameter must be declared strictly and exclusively during POST or PUT HTTP request scenarios.\n"
         "  3. RESPONSE ENCAPSULATION WRAPPER NAVIGATION: The 'fc_generic' module encapsulates the platform response body payload; the true data payload returned by the interface is nested under 'output.ret.rsp'. All down-stream task variable references, conditioning statements, or data extractions via Jinja expressions must navigate through this layer (e.g., '{{ output_variable.ret.rsp.hosts }}'). The parsing path must strictly conform to the sample Response provided in the API interface documentation.\n"
         "  4. SERVER-SIDE FILTERING & PARAMETER COMPLETENESS: You are strictly forbidden from fetching unfiltered collections followed by client-side Jinja2 filtering. You must pass precision query parameters directly within the server-side string (e.g., fc_url: '/hosts?name={{ target_hostname }}'). Cross-reference the parameter tables in the documentation; unless a parameter is explicitly text-marked as optional ('可选'), you must treat it as mandatory and explicitly declare it.\n"
         "  5. URL SANITIZATION & VARIABLE CLEANLINESS: Strip out any '/site/SITEID' tracking prefixes from your target 'fc_url' paths while ensuring the path retains its leading slash. The site_id parameter must be retrieved using 'fc_token_manager'. You are strictly forbidden from declaring 'site_id', 'siteid', or redundant unused variables within your playbook configuration blocks.\n"
@@ -161,7 +164,7 @@ ansible_code_reviewer = Agent(
         "All code comments inside your updated files must be written in English."
     ),
     tools=[
-        AnsibleAutomationTools.read_all_compiled_ansible_files,  # Added: Resolves the blind spot by exposing local disk reads
+        AnsibleAutomationTools.read_all_compiled_ansible_files,
         AnsibleAutomationTools.read_ansible_module_specification,
         AnsibleAutomationTools.read_api_specification,
         AnsibleAutomationTools.query_specific_api_content,
@@ -178,8 +181,8 @@ ansible_code_reviewer = Agent(
 if __name__ == "__main__":
     print("\n" + "="*20 + " AUDITING MULTI-AGENT PIPELINE MATRICES " + "="*20)
 
-    # Test 1: Verify Architect Agent tool isolation boundary
-    assert len(ansible_blueprint_designer.tools) == 3, "Error: Architect must possess exactly 3 lookup tools."
+    # Test 1: Verify Architect Agent tool isolation boundary (Updated to 4 for dependency lookup)
+    assert len(ansible_blueprint_designer.tools) == 4, "Error: Architect must possess exactly 4 lookup tools."
     print("  Pass: Architect Agent tool volume validated.")
 
     # Test 2: Verify Code Compilation Engineer tool isolation boundary
