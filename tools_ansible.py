@@ -123,6 +123,7 @@ class AnsibleAutomationTools:
         """
         Extracts precise technical parameter tables, URL methods, and payload data schemas 
         exclusively from the core interface chapters of the raw FusionCompute REST API document.
+        Automatically truncates the document from the error code section down to optimize context.
 
         The input parameter 'target_heading_or_keyword' must strictly be the Chinese text name of 
         the final API interface section (e.g., '查询指定主机'). It must not contain URL fragments, 
@@ -141,6 +142,15 @@ class AnsibleAutomationTools:
             "CDP容灾管理", 
             "事件上报接口"
         ]
+
+        def truncate_at_error_section(text_content: str) -> str:
+            """Truncates the document entirely from the first occurrence of the error code row."""
+            valid_lines = []
+            for line in text_content.splitlines():
+                if "错误码" in line:
+                    break  # Error codes always reside at the very bottom; drop everything from this line down
+                valid_lines.append(line)
+            return "\n".join(valid_lines)
         
         # Channel 1: Strict substring matching bounded to target interface chapters
         all_records = collection.get(where=filter_condition, include=["metadatas", "documents"])
@@ -148,15 +158,14 @@ class AnsibleAutomationTools:
             heading = meta.get("heading", "")
             top_level = heading.split("->")[0].strip()
             
-            # Enforce strict section matching and guarantee a single result return
             if top_level in allowed_top_levels and target_heading_or_keyword.strip() in heading:
-                return f"### Verified API Schema: {heading}\n{all_records['documents'][idx]}"
+                cleaned_doc = truncate_at_error_section(all_records['documents'][idx])
+                return f"### Verified API Schema: {heading}\n{cleaned_doc}"
                 
         # Channel 2: High-precision Vector Search fallback restricted to the API source document
         nomic_safe_query = f"search_query: {target_heading_or_keyword}"
         response = ollama.embeddings(model="nomic-embed-text", prompt=nomic_safe_query)
         
-        # n_results expands candidate window for validation but the loop guarantees only one output
         results = collection.query(
             query_embeddings=[response["embedding"]],
             where=filter_condition,
@@ -168,8 +177,10 @@ class AnsibleAutomationTools:
             for doc_idx, meta_data in enumerate(results["metadatas"][0]):
                 res_heading = meta_data.get("heading", "")
                 res_top_level = res_heading.split("->")[0].strip()
+                
                 if res_top_level in allowed_top_levels:
-                    return f"### Verified API Vector Result: {res_heading}\n{results['documents'][0][doc_idx]}"
+                    cleaned_doc = truncate_at_error_section(results['documents'][0][doc_idx])
+                    return f"### Verified API Vector Result: {res_heading}\n{cleaned_doc}"
                     
         return f"No certified data specification discovered within core API chapters matching: '{target_heading_or_keyword}'."
 
