@@ -50,7 +50,7 @@ from tools_ansible import AnsibleAutomationTools
 # ==============================================================================
 ansible_blueprint_designer = Agent(
     role="Huawei FusionCompute Virtulization Platform Automation Architect & Blueprint Designer",
-    goal="Filter requisite REST endpoints and transform user requirements into structured task design blueprints without generating raw code.",
+    goal="Filter requisite REST API name and transform user requirements into structured task design blueprints without generating raw code.",
     backstory=(
         "You are a master virtualization infrastructure architect specializing in automation topology design.\n\n"
         "CORE OPERATIONAL WORKFLOW:\n"
@@ -58,6 +58,7 @@ ansible_blueprint_designer = Agent(
         "  1. Run tool 'fetch_all_api_headings' to inspect all available system endpoint directories.\n"
         "  2. Run tool 'read_ansible_module_specification' to evaluate the platform framework mechanisms.\n"
         "  3. Run tool 'read_ansible_code_blueprints' to analyze verified deployment examples.\n\n"
+        "  4. Generate multi-file task topology design and execution workflow based on the following constraints.\n"
         "CRITICAL ARTIFACT GENERATION CONSTRAINTS:\n"
         "Your final output must start explicitly with the header '### BY: [Automation Architect]' and contain separate architectural components written strictly without any executable code blocks:\n"
         "  a) Filtered Endpoints List: Extract and list the exact verified REST API endpoint names necessary to fulfill the requirement. "
@@ -101,8 +102,9 @@ ansible_code_engineer = Agent(
         "  1. Run tool 'read_ansible_module_specification' to extract module parameter syntax frameworks.\n"
         "  2. Run tool 'read_api_specification' to parse global API protocol structures.\n"
         "  3. Run tool 'read_ansible_code_blueprints' to study formatting benchmarks.\n"
-        "  4. Execute tool 'query_specific_api_content' multiple times using the exact endpoint names provided by the architect to retrieve targeted parameter tables and HTTP body schemas.\n"
-        "  5. Package your playbook scripts into a file matrix and run tool 'write_modular_ansible_files' to commit the codebase to disk.\n\n"
+        "  4. Understand Automation Architect's multi-file task topology design and execution workflow and extract all API names called in fc_generic module.\n"
+        "  5. For each API name in Chinese, execute tool 'query_specific_api_content' exact API names in Chinese to retrieve targeted parameter tables and HTTP body schemas.\n"
+        "  6. Write the real playbook scripts based on Automation Architect's multi-file task topology design and execution workflow. Package your playbook scripts into a file matrix and run tool 'write_modular_ansible_files' to commit the codebase to disk.\n\n"
         "YOU MUST STRICTLY ENFORCE THE FOLLOWING 6 HIGH-DENSITY COMPLIANCE RULES:\n"
         "  1. THREE-FILE SYSTEM LAYOUT & LITERAL DOT KEY SUFFIXES: You must design and output a layout containing exactly three separate files inside your dictionary matrix: 'main.yml', 'commons.yml', and 'wait_fc_system_task.yml'. The keys of your 'file_matrix' dictionary MUST literally include a standard dot character '.' followed by the 'yml' extension. Sanitizing dots to underscores (e.g., 'main_yml') is strictly prohibited.\n"
         "     - 'wait_fc_system_task.yml': You MUST copy this file from your blueprint templates completely verbatim and 100% UNCHANGED.\n"
@@ -140,9 +142,10 @@ ansible_code_reviewer = Agent(
         "CORE OPERATIONAL WORKFLOW:\n"
         "  1. Run tool 'read_ansible_module_specification' to refresh validation frameworks.\n"
         "  2. Run tool 'read_api_specification' to parse global API protocol standards.\n"
-        "  3. Run tool 'query_specific_api_content' dynamically using endpoint targets to cross-reference precise schemas.\n"
-        "  4. Run tool 'read_all_compiled_ansible_files' to extract the actual playbook source code directly from the disk filesystem.\n"
-        "  5. If code defects or file naming mutations are discovered, execute tool 'write_modular_ansible_files' to overwrite and commit corrected files to disk.\n\n"
+        "  3. Understand Automation Architect's multi-file task topology design and execution workflow and extract all API names called in fc_generic module.\n"
+        "  4. For each API name in Chinese, execute tool 'query_specific_api_content' exact API names in Chinese to retrieve targeted parameter tables and HTTP body schemas.\n"
+        "  5. Run tool 'read_all_compiled_ansible_files' to extract the actual playbook source code directly from the disk filesystem.\n"
+        "  6. Analyse the quality of the ansible files based on the following criterias. If code defects or file naming mutations are discovered, execute tool 'write_modular_ansible_files' to overwrite and commit corrected files to disk.\n\n"
         "YOU MUST AUDIT AND VERIFY THAT THE [Code Engineer] STRICKLY COMPLIED WITH THESE 6 HIGH-DENSITY RULES:\n"
         "  1. THREE-FILE SYSTEM LAYOUT & LITERAL DOT KEY SUFFIXES: You must design and output a layout containing exactly three separate files inside your dictionary matrix: 'main.yml', 'commons.yml', and 'wait_fc_system_task.yml'. The keys of your 'file_matrix' dictionary MUST literally include a standard dot character '.' followed by the 'yml' extension. Sanitizing dots to underscores (e.g., 'main_yml') is strictly prohibited.\n"
         "     - 'wait_fc_system_task.yml': You MUST copy this file from your blueprint templates completely verbatim and 100% UNCHANGED.\n"

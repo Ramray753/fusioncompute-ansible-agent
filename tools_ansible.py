@@ -123,6 +123,10 @@ class AnsibleAutomationTools:
         """
         Extracts precise technical parameter tables, URL methods, and payload data schemas 
         exclusively from the core interface chapters of the raw FusionCompute REST API document.
+
+        The input parameter 'target_heading_or_keyword' must strictly be the Chinese text name of 
+        the final API interface section (e.g., '查询指定主机'). It must not contain URL fragments, 
+        HTTP methods, or request/response body parameter fields.
         """
         chroma_client = chromadb.PersistentClient(path="./chroma_db")
         collection = chroma_client.get_collection(name="ansible_agent_knowledge")
@@ -143,18 +147,23 @@ class AnsibleAutomationTools:
         for idx, meta in enumerate(all_records.get("metadatas", [])):
             heading = meta.get("heading", "")
             top_level = heading.split("->")[0].strip()
+            
+            # Enforce strict section matching and guarantee a single result return
             if top_level in allowed_top_levels and target_heading_or_keyword.strip() in heading:
                 return f"### Verified API Schema: {heading}\n{all_records['documents'][idx]}"
                 
         # Channel 2: High-precision Vector Search fallback restricted to the API source document
         nomic_safe_query = f"search_query: {target_heading_or_keyword}"
         response = ollama.embeddings(model="nomic-embed-text", prompt=nomic_safe_query)
+        
+        # n_results expands candidate window for validation but the loop guarantees only one output
         results = collection.query(
             query_embeddings=[response["embedding"]],
             where=filter_condition,
-            n_results=3  # Scan top results to guarantee top-level compliance filtering
+            n_results=5
         )
         
+        # Iterates candidates to return exclusively the single highest-ranking valid document
         if results and results["documents"] and results["documents"][0]:
             for doc_idx, meta_data in enumerate(results["metadatas"][0]):
                 res_heading = meta_data.get("heading", "")

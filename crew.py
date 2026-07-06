@@ -89,8 +89,8 @@ if __name__ == "__main__":
     print("\n" + "="*21 + " FUSIONCOMPUTE AUTOMATION RUNTIME " + "="*21)
     try:
         # Prompt user directly in the command line session after invoking 'python crew.py'
-        # Exmaple 1: 编写一个Ansible Playbook，用户指定一个主机名和数据存储名，完成关联该数据存储到主机的操作。
-        # Exmaple 2: 编写一个Ansible Playbook，用户指定一个虚拟机名称，查询到ID和操作系统类型，如果这个虚拟机类型为Linux，通过API接口"给虚拟机上传自定义脚本"上传自定义脚本，脚本内容为"hostname"，等待任务执行结束后，打印执行结果。
+        # Exmaple 1: 编写一个Ansible Playbook，用户指定一个虚拟机名称，如果其本身状态为开机，则执行关机操作；如果其本身状态为关机，则执行开机操作。
+        # Exmaple 2: 编写一个Ansible Playbook，用户指定一个虚拟机名称，查询到ID和操作系统类型。如果这个虚拟机类型为Linux，通过API接口"给虚拟机上传自定义脚本"上传自定义脚本，脚本内容为"hostname"；如果这个虚拟机类型为Windows，通过API接口"给虚拟机上传自定义脚本"上传自定义脚本，脚本内容为"Get-ComputerInfo"。等待任务执行结束后，打印执行结果。
         # Exmaple 3: 编写一个Ansible Playbook，用户指定一个CSV文件路径（./vm_names.csv），通过虚拟机详细信息查询Tools的运行状态和版本，并将结果汇总到./vm_tools.csv，文件包含4列（虚拟机名，ID，Tools状态，Tools版本），如果虚拟机名称对应多个ID则仅考虑第一个。每个虚拟机并发查询，并发度为10，并发度定义在commons.yml文件中。
         # Exmaple 4: 编写一个Ansible Playbook，用户指定两个CSV文件路径（./host_names.csv和./datastore_names.csv），这两个CSV文件没有表头，host_names.csv代表主机名称列表，datastore_names.csv表示数据存储名称列表。对于每个主机和数据存储，完成主机关联数据存储操作，串行执行。
         user_input_requirement = input("[PROMPT] Please enter your automation requirement: ").strip()
