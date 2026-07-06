@@ -1,106 +1,86 @@
 from crewai import Crew, Task, Process
 
-# Import our example-driven unified agents from the centralized agents.py script
-from agents import virtualization_analyst, python_rest_engineer, ansible_automation_engineer
+# Import our decoupled multi-agent factory from the centralized agents.py script
+from agents import ansible_blueprint_designer, ansible_code_engineer, ansible_code_reviewer
 
 def run_virtualization_orchestrator(user_prompt: str):
     """
-    Orchestrates the entire multi-agent workflow using clean semantic bridging.
-    Tasks focus exclusively on dynamic input data and expected output goals,
-    completely offloading strict execution guardrails to the Agent's backstory definitions.
+    Orchestrates the multi-agent sequential pipeline using synchronized token 
+    identifiers and explicit file-system context handshakes.
     """
-    print(f"\n[ORCHESTRATOR] Initializing abstracted infrastructure triage for: '{user_prompt}'")
+    print(f"\n[ORCHESTRATOR] Initializing multi-agent pipeline orchestration for: '{user_prompt}'")
     
     # ==============================================================================
-    # PHASE 1: REQUIREMENTS ANALYSIS & TECHNIQUE ROUTING 
+    # TASK 1: ARCHITECTURAL DESIGN & ROUTING PHASE
     # ==============================================================================
-    analysis_task = Task(
+    architect_task = Task(
         description=(
-            "Thoroughly analyze the incoming request: '{user_request}'.\n"
-            "Evaluate whether this implementation requires a raw Python REST API script project "
-            "or an Ansible Playbook automation environment.\n"
-            "Enforce the specific block token classification constraint as instructed in your profile."
+            "Thoroughly analyze the incoming infrastructure request: '{user_request}'.\n"
+            "Query your directory index maps to identify the exact minimum subset of REST API endpoints "
+            "required to fulfill the request. Do NOT include asynchronous task-tracking endpoints. "
+            "Deconstruct the target logic into an abstract, multi-file execution workflow design blueprint. "
+            "You must explicitly declare task sequences, module selections, and specify REST routes whenever "
+            "fc_generic is required. Prepend your final response with the header '### BY: [Automation Architect]'. "
+            "Do not generate code."
         ),
-        expected_output="An absolute architectural routing token followed by sequential atomic breakdown steps.",
-        agent=virtualization_analyst
+        expected_output="A filtered REST API endpoint registry followed by a sequential multi-file execution block topology design blueprint.",
+        agent=ansible_blueprint_designer
     )
     
-    triage_crew = Crew(
-        agents=[virtualization_analyst],
-        tasks=[analysis_task],
-        process=Process.sequential,
+    # ==============================================================================
+    # TASK 2: PRODUCTION CODE COMPILATION PHASE (CONTEXT BOUND TO TASK 1)
+    # ==============================================================================
+    coder_task = Task(
+        description=(
+            "Analyze the technical endpoint registry and execution workflow design provided by the upstream [Automation Architect].\n"
+            "Query the detailed parameter schemas for the specified endpoints. Translate the abstract layout "
+            "into an operating, production-grade multi-file Ansible playbook environment using exclusively the "
+            "generic module framework for platform transactions. Commit the file matrix containing 'main.yml', "
+            "'commons.yml', and 'wait_fc_system_task.yml' to disk by strictly enforcing your 6 high-density compliance rules."
+        ),
+        expected_output="A deployment log or matrix confirmation showing that the initial yml file structure was flashed to disk.",
+        agent=ansible_code_engineer,
+        context=[architect_task] # Handshake: Restricts coder to the architect's specific technical boundaries
+    )
+    
+    # ==============================================================================
+    # TASK 3: AUDIT & QUALITY ASSURANCE REVIEW PHASE (CONTEXT BOUND TO TASKS 1 & 2)
+    # ==============================================================================
+    reviewer_task = Task(
+        description=(
+            "Perform a rigorous compliance audit on the deployed Ansible playbook code matrix.\n"
+            "First, execute your local read tool to fetch the actual text content of the playbooks written by the [Code Engineer] from disk. "
+            "Simultaneously cross-reference the retrieved code against the [Automation Architect]'s structural workflow design "
+            "and the 6 high-density production compliance rules established inside your backstory profile. "
+            "Pay absolute attention to response path formatting patterns and fc_generic syntax. "
+            "If any structural defects, key-suffix mutations, or payload discrepancies are discovered, "
+            "execute your write tool to save the remediated, compliant code back to disk."
+        ),
+        expected_output="A final layout receipt validating compliance across all 6 high-density constraints, with explicit file keys committed to disk.",
+        agent=ansible_code_reviewer,
+        context=[architect_task] # Handshake: Grants full visibility into both blueprints and source code
+    )
+    
+    # ==============================================================================
+    # PIPELINE CRADLE EXECUTION ENGINE
+    # ==============================================================================
+    production_crew = Crew(
+        agents=[
+            ansible_blueprint_designer, 
+            ansible_code_engineer, 
+            ansible_code_reviewer
+        ],
+        tasks=[
+            architect_task, 
+            coder_task, 
+            reviewer_task
+        ],
+        process=Process.sequential, # Enforce strict waterfall progression
         verbose=True
     )
     
-    analysis_result = triage_crew.kickoff(inputs={"user_request": user_prompt}).raw
-    print("\n" + "="*20 + " ARCHITECT ANALYSIS MATRIX GENERATED " + "="*20)
-    print(analysis_result)
-    print("="*57 + "\n")
-    
-    routing_lines = analysis_result.strip().splitlines()
-    if not routing_lines:
-        print("[FATAL] Architect returned an empty blueprint.")
-        return
-    routing_header = routing_lines[0]
-    
-    # ==============================================================================
-    # PHASE 2A: TRACK 1 RUNTIME - PURE PYTHON REST ENGINE (FULLY DECOUPLED)
-    # ==============================================================================
-    if "PYTHON_REST" in routing_header:
-        print("[ROUTER] Enforcing TRACK: PYTHON_REST. Initializing Python Rest Engineer...")
-        
-        python_production_task = Task(
-            description=(
-                f"Implement the following virtualization blueprint: \n{analysis_result}\n\n"
-                "CRITICAL DIRECTION:\n"
-                "Execute your chronological tool pipeline precisely as defined in your backstory.\n"
-                "You are ordered to process the reference code blueprints strictly for parameter comprehension, "
-                "while forcing advanced Python modularity and encapsulation as mandated by your profile settings. "
-                "Ensure every flashed filename key strictly forces a legal extension suffix."
-            ),
-            expected_output="A local validation receipt proving that your modular source scripts with explicit .py extensions were flashed.",
-            agent=python_rest_engineer
-        )
-        
-        python_crew = Crew(
-            agents=[python_rest_engineer],
-            tasks=[python_production_task],
-            process=Process.sequential,
-            verbose=True
-        )
-        python_crew.kickoff()
-        print("\n[DEPLOYMENT] Track 1 execution finalized. Check ./output_python/ directory.")
-
-    # ==============================================================================
-    # PHASE 2B: TRACK 2 RUNTIME - DECLARATIVE ANSIBLE PLAYBOOK ENVIRONMENT (FULLY DECOUPLED)
-    # ==============================================================================
-    elif "ANSIBLE_PLAYBOOK" in routing_header:
-        print("[ROUTER] Enforcing TRACK: ANSIBLE_PLAYBOOK. Initializing Streamlined Ansible Orchestrator...")
-        
-        ansible_production_task = Task(
-            description=(
-                f"Implement the following virtualization blueprint: \n{analysis_result}\n\n"
-                "CRITICAL DIRECTION:\n"
-                "Execute your chronological tool lookup sequence precisely as defined in your backstory.\n"
-                "You must deliver the finalized file matrix by strictly conforming to all production compliance "
-                "mandates, file layout conventions, and anti-pitfall rules established inside your backstory definition. "
-                "Do not invent any out-of-scope inventory topologies."
-            ),
-            expected_output="A topology layout receipt proving that only compliant, numbered, multi-file playbooks with explicit .yml extensions as dictionary keys were flashed.",
-            agent=ansible_automation_engineer
-        )
-        
-        ansible_crew = Crew(
-            agents=[ansible_automation_engineer],
-            tasks=[ansible_production_task],
-            process=Process.sequential,
-            verbose=True
-        )
-        ansible_crew.kickoff()
-        print("\n[DEPLOYMENT] Track 2 execution successfully finalized. Check ./output_ansible/ directory.")
-        
-    else:
-        print(f"[FATAL ROUTING ERROR] Unrecognized routing token: '{routing_header}'")
+    production_crew.kickoff(inputs={"user_request": user_prompt})
+    print("\n[DEPLOYMENT] Pipeline orchestration executed completely. Check ./output_ansible/ directory.")
 
 # ==============================================================================
 # PURE INTERACTIVE COMMAND-LINE GATEWAY ENTRY POINT
@@ -109,8 +89,10 @@ if __name__ == "__main__":
     print("\n" + "="*21 + " FUSIONCOMPUTE AUTOMATION RUNTIME " + "="*21)
     try:
         # Prompt user directly in the command line session after invoking 'python crew.py'
-        # Exmaple: 编写一个Ansible Playbook，指定一个主机名和数据存储名，完成关联该数据存储到主机的操作。
-        # Exmaple: 编写一个Ansible Playbook，指定虚拟机名，如果类型为Linux，上传自定义脚本"hostname"，打印执行结果。
+        # Exmaple 1: 编写一个Ansible Playbook，用户指定一个主机名和数据存储名，完成关联该数据存储到主机的操作。
+        # Exmaple 2: 编写一个Ansible Playbook，用户指定一个虚拟机名称，查询到ID和操作系统类型，如果这个虚拟机类型为Linux，通过API接口"给虚拟机上传自定义脚本"上传自定义脚本，脚本内容为"hostname"，等待任务执行结束后，打印执行结果。
+        # Exmaple 3: 编写一个Ansible Playbook，用户指定一个CSV文件路径（./vm_names.csv），通过虚拟机详细信息查询Tools的运行状态和版本，并将结果汇总到./vm_tools.csv，文件包含4列（虚拟机名，ID，Tools状态，Tools版本），如果虚拟机名称对应多个ID则仅考虑第一个。每个虚拟机并发查询，并发度为10，并发度定义在commons.yml文件中。
+        # Exmaple 4: 编写一个Ansible Playbook，用户指定两个CSV文件路径（./host_names.csv和./datastore_names.csv），这两个CSV文件没有表头，host_names.csv代表主机名称列表，datastore_names.csv表示数据存储名称列表。对于每个主机和数据存储，完成主机关联数据存储操作，串行执行。
         user_input_requirement = input("[PROMPT] Please enter your automation requirement: ").strip()
         if user_input_requirement:
             run_virtualization_orchestrator(user_input_requirement)
