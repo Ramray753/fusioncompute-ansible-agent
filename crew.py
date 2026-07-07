@@ -1,7 +1,25 @@
+import os
+import yaml
+from dotenv import load_dotenv
 from crewai import Crew, Task, Process
 
 # Import our decoupled multi-agent factory from the centralized agents.py script
 from agents import ansible_blueprint_designer, ansible_code_engineer, ansible_code_reviewer
+
+def _load_task_prompt_config() -> dict:
+    """
+    Helper function to load multi-line structural task descriptions and expectations
+    from the external decoupled config matrix 'tasks.yaml'.
+    """
+    config_file = "tasks.yaml"
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"[FATAL ERROR] Requisite task asset file '{config_file}' is missing from workspace.")
+    
+    with open(config_file, "r", encoding="utf-8") as file_handle:
+        try:
+            return yaml.safe_load(file_handle)
+        except Exception as error:
+            raise ValueError(f"[PARSING ERROR] Failed to load structural task yaml from {config_file}. Details: {str(error)}")
 
 def run_virtualization_orchestrator(user_prompt: str):
     """
@@ -10,55 +28,39 @@ def run_virtualization_orchestrator(user_prompt: str):
     """
     print(f"\n[ORCHESTRATOR] Initializing multi-agent pipeline orchestration for: '{user_prompt}'")
     
+    # Load fully decoupled task blueprints from external config storage matrix
+    task_prompts = _load_task_prompt_config()
+    
     # ==============================================================================
     # TASK 1: ARCHITECTURAL DESIGN & ROUTING PHASE
     # ==============================================================================
+    t_architect = task_prompts["architect_task"]
     architect_task = Task(
-        description=(
-            "Thoroughly analyze the incoming infrastructure request: '{user_request}'.\n"
-            "Query your directory index maps to identify the exact minimum subset of REST API endpoints "
-            "required to fulfill the request. Do NOT include asynchronous task-tracking endpoints. "
-            "Deconstruct the target logic into an abstract, multi-file execution workflow design blueprint. "
-            "You must explicitly declare task sequences, module selections, and specify REST routes whenever "
-            "fc_generic is required. Prepend your final response with the header '### BY: [Automation Architect]'. "
-            "Do not generate code."
-        ),
-        expected_output="A filtered REST API endpoint registry followed by a sequential multi-file execution block topology design blueprint.",
+        description=t_architect["description"],
+        expected_output=t_architect["expected_output"],
         agent=ansible_blueprint_designer
     )
     
     # ==============================================================================
     # TASK 2: PRODUCTION CODE COMPILATION PHASE (CONTEXT BOUND TO TASK 1)
     # ==============================================================================
+    t_coder = task_prompts["coder_task"]
     coder_task = Task(
-        description=(
-            "Analyze the technical endpoint registry and execution workflow design provided by the upstream [Automation Architect].\n"
-            "Query the detailed parameter schemas for the specified endpoints. Translate the abstract layout "
-            "into an operating, production-grade multi-file Ansible playbook environment using exclusively the "
-            "generic module framework for platform transactions. Commit the file matrix containing 'main.yml', "
-            "'commons.yml', and 'wait_fc_system_task.yml' to disk by strictly enforcing your 6 high-density compliance rules."
-        ),
-        expected_output="A deployment log or matrix confirmation showing that the initial yml file structure was flashed to disk.",
+        description=t_coder["description"],
+        expected_output=t_coder["expected_output"],
         agent=ansible_code_engineer,
-        context=[architect_task] # Handshake: Restricts coder to the architect's specific technical boundaries
+        context=[architect_task] # Handshake: Restricts coder to the architect's boundaries
     )
     
     # ==============================================================================
     # TASK 3: AUDIT & QUALITY ASSURANCE REVIEW PHASE (CONTEXT BOUND TO TASKS 1 & 2)
     # ==============================================================================
+    t_reviewer = task_prompts["reviewer_task"]
     reviewer_task = Task(
-        description=(
-            "Perform a rigorous compliance audit on the deployed Ansible playbook code matrix.\n"
-            "First, execute your local read tool to fetch the actual text content of the playbooks written by the [Code Engineer] from disk. "
-            "Simultaneously cross-reference the retrieved code against the [Automation Architect]'s structural workflow design "
-            "and the 6 high-density production compliance rules established inside your backstory profile. "
-            "Pay absolute attention to response path formatting patterns and fc_generic syntax. "
-            "If any structural defects, key-suffix mutations, or payload discrepancies are discovered, "
-            "execute your write tool to save the remediated, compliant code back to disk."
-        ),
-        expected_output="A final layout receipt validating compliance across all 6 high-density constraints, with explicit file keys committed to disk.",
+        description=t_reviewer["description"],
+        expected_output=t_reviewer["expected_output"],
         agent=ansible_code_reviewer,
-        context=[architect_task] # Handshake: Grants full visibility into both blueprints and source code
+        context=[architect_task, coder_task] # Handshake: Grants full visibility into designs and code
     )
     
     # ==============================================================================
@@ -88,11 +90,6 @@ def run_virtualization_orchestrator(user_prompt: str):
 if __name__ == "__main__":
     print("\n" + "="*21 + " FUSIONCOMPUTE AUTOMATION RUNTIME " + "="*21)
     try:
-        # Prompt user directly in the command line session after invoking 'python crew.py'
-        # Exmaple 1: 编写一个Ansible Playbook，用户指定一个虚拟机名称，如果其本身状态为开机，则执行关机操作；如果其本身状态为关机，则执行开机操作。
-        # Exmaple 2: 编写一个Ansible Playbook，用户指定一个虚拟机名称，查询到ID和操作系统类型。如果这个虚拟机类型为Linux，通过API接口"给虚拟机上传自定义脚本"上传自定义脚本，脚本内容为"hostname"；如果这个虚拟机类型为Windows，通过API接口"给虚拟机上传自定义脚本"上传自定义脚本，脚本内容为"Get-ComputerInfo"。等待任务执行结束后，打印执行结果。
-        # Exmaple 3: 编写一个Ansible Playbook，用户指定一个CSV文件路径（./vm_names.csv），这个文件中的每一行代表一个虚拟机名称，没有表头。对每个虚拟机名称，查询虚拟机详细信息（如果虚拟机名称对应多个ID则仅考虑第一个），从详细信息中获取Tools的运行状态和版本，并将结果汇总到./vm_tools.csv。汇总文件包含4列（虚拟机名，ID，Tools状态，Tools版本）。每个虚拟机并发查询（基于Ansible的并发控制机制），并发度为10，并发度定义在commons.yml文件中，文件路径定义在main.yml的vars.user_config中。
-        # Exmaple 4: 编写一个Ansible Playbook，用户指定两个CSV文件路径（./host_names.csv和./datastore_names.csv），这两个CSV文件没有表头，host_names.csv代表主机名称列表，每一行都是一个主机名称；datastore_names.csv表示数据存储名称列表，每一行都是一个数据存储名称。对于每个主机和数据存储，完成主机关联数据存储操作，串行执行。
         user_input_requirement = input("[PROMPT] Please enter your automation requirement: ").strip()
         if user_input_requirement:
             run_virtualization_orchestrator(user_input_requirement)

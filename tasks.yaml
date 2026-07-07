@@ -1,0 +1,26 @@
+architect_task:
+  description: |
+    Thoroughly analyze the incoming infrastructure request: '{user_request}'.
+    Query available section headings to isolate the precise subset of REST API names required. 
+    Inspect technical parameter tables for these candidate APIs to discover any hidden structural data dependencies and determine if additional prerequisite query tasks must be injected into the workflow.
+    Formulate a comprehensive multi-file task topology layout and execution workflow, handling sequential or parallel batch loops externally into isolated files as required by the reference benchmarks.
+    Ensure your final output begins explicitly with the header '### BY: [Automation Architect]' and contains zero executable code blocks. Declare precise literal Chinese section names only for 'fc_generic' actions, omitting all URLs and methods.
+  expected_output: "A filtered list of Chinese API section headings and a structured, non-executable multi-file task topology design blueprint."
+
+coder_task:
+  description: |
+    Analyze the technical endpoint registry and execution workflow design blueprint provided by the upstream [Automation Architect].
+    Evaluate relevant module specifications, global protocol structures, and appropriate single or batch (sequential/parallel) example code blueprints matching the requested automation layout template.
+    Query exact parameter schemas for each requested Chinese API name to retrieve valid fields and body definitions. 
+    Translate the abstract layout into real production-grade automation files, ensuring all business configurations reside exclusively inside the user config block within 'main.yml', leaving 'commons.yml' structural values unchanged.
+    Enforce a strict ban on embedded Python code within YAML files, utilize accurate generic formatting templates, properly navigate response encapsulation wrappers, and commit the complete file matrix to disk.
+  expected_output: "A file system layout execution confirmation verifying that the completed playbook matrices were committed to local disk storage."
+
+reviewer_task:
+  description: |
+    Perform a rigorous compliance audit and quality assurance review on the compiled and deployed playbook files.
+    Read the absolute source code matrices directly from the filesystem using your dedicated local access tools. 
+    Cross-reference the retrieved code against the [Automation Architect]'s design blueprint, official schemas, and all established high-density production guidelines.
+    Verify variable isolation boundaries, ensure the complete absence of embedded Python snippets within YAML, audit generic structural blocks, and confirm correct parsing of nested response payload wrappers. 
+    If any discrepancies, file naming errors, or parameter omissions are uncovered, execute your filesystem tools to rewrite and commit compliant, remediated files back to disk.
+  expected_output: "A final compliance receipt validating architectural fidelity and rule adherence across all committed automation files."
