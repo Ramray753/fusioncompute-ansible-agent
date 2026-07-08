@@ -1,0 +1,45 @@
+# =========================================================================
+# Outer-Loop Business Logic: Per-Host Datastore Association Orchestration
+# =========================================================================
+# This file is invoked once per host name from host_names.csv.
+# It receives 'host_name_item' from the outer loop and has access to
+# 'datastore_list' from the parent scope.
+#
+# Workflow:
+#   1. Look up the host by name to retrieve its full URN.
+#   2. For each datastore name in datastore_list, invoke the inner-loop
+#      business logic to create the datastore association.
+# =========================================================================
+
+# [Task 2.1] Fuzzy-search the host by its name from the CSV to retrieve its URN.
+- name: "[Task 2.1] GET - Query host by name for {{ host_name_item }}"
+  huawei.fusioncompute.fc_generic:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    fc_method: 'get'
+    fc_url: '/hosts?name={{ host_name_item }}'
+  register: output_task_2_1
+
+# [Task 2.2] Extract the host URN using exact-name matching to guard against
+# fuzzy-match collisions. The full URN (e.g., urn:sites:XXXX:hosts:NNN) is
+# used directly as the hostUrn parameter in the downstream datastore creation.
+- name: "[Task 2.2] Extract host URN for {{ host_name_item }}"
+  set_fact:
+    _current_host_urn: "{{ (output_task_2_1.ret.rsp.hosts | selectattr('name', 'equalto', host_name_item) | first).urn }}"
+  when:
+    - output_task_2_1.ret.rsp.hosts | length > 0
+    - (output_task_2_1.ret.rsp.hosts | selectattr('name', 'equalto', host_name_item) | list | length) > 0
+
+# [Task 2.3] Sequentially loop over datastore_list; for each datastore name
+# invoke the inner-loop business logic. Skip empty/whitespace-only lines.
+# The _current_host_urn is implicitly available in the child scope.
+- name: "[Task 2.3] Loop datastores and create associations for host {{ host_name_item }}"
+  ansible.builtin.include_tasks: create_datastore_single.yml
+  loop: "{{ datastore_list }}"
+  loop_control:
+    loop_var: ds_name_item
+  # Execute only if the host URN was successfully resolved
+  when:
+    - _current_host_urn is defined
+    - ds_name_item | trim | length > 0

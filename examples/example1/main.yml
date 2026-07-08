@@ -1,0 +1,96 @@
+- name: FusionCompute Automation - Query VM Disk Datastore Names
+  hosts: localhost
+  vars_files:
+    - ./commons.yml
+
+  vars:
+    user_config:
+      vm_name: 'api-demo-001'
+
+  tasks:
+    # =========================================================================
+    # SECTION 1 — Input Validation
+    # =========================================================================
+    - name: "[Task 1.1] - Validate User Input - Fail if VM name is missing"
+      fail:
+        msg: "ERROR: user_config.vm_name is not defined or is empty. Please provide a valid VM name."
+      when: user_config.vm_name is not defined or user_config.vm_name | length == 0
+
+    # =========================================================================
+    # SECTION 2 — Fuzzy Search VM by Name and Extract VM ID
+    # =========================================================================
+    - name: "[Task 2.1] - FusionCompute fc_generic Module - Fuzzy Search VM by Name"
+      huawei.fusioncompute.fc_generic:
+        fc_hostname: '{{ fc_hostname }}'
+        fc_username: '{{ fc_username }}'
+        fc_password: '{{ fc_password }}'
+        fc_method: '{{ _fc_method }}'
+        fc_url: '{{ _fc_url }}'
+      vars:
+        _fc_method: 'get'
+        _fc_url: '/vms?name={{ user_config.vm_name }}'
+      register: output_vm_list
+
+    - name: "[Task 2.2] - Ansible Built-in debug - Print Raw VM List Response"
+      debug:
+        msg: '{{ output_vm_list }}'
+
+    - name: "[Task 2.3] - Ansible Built-in set_fact - Extract VM ID"
+      set_fact:
+        vm_id: "{{ (output_vm_list.ret.rsp.vms | first).urn.split(':') | last }}"
+      when:
+        - output_vm_list.ret.rsp.total | default(0) > 0
+        - output_vm_list.ret.rsp.vms | default([]) | length > 0
+
+    - name: "[Task 2.3] - Fail if no VM matched the search"
+      fail:
+        msg: "No VM found matching name: {{ user_config.vm_name }}"
+      when:
+        - output_vm_list.ret.rsp.total | default(0) == 0 or output_vm_list.ret.rsp.vms | default([]) | length == 0
+
+    - name: "[Task 2.4] - Ansible Built-in debug - Print Extracted VM ID"
+      debug:
+        msg: '{{ vm_id }}'
+      when: vm_id is defined
+
+    # =========================================================================
+    # SECTION 3 — Query VM Detail by ID
+    # =========================================================================
+    - name: "[Task 3.1] - FusionCompute fc_generic Module - Query VM Detail by ID"
+      huawei.fusioncompute.fc_generic:
+        fc_hostname: '{{ fc_hostname }}'
+        fc_username: '{{ fc_username }}'
+        fc_password: '{{ fc_password }}'
+        fc_method: '{{ _fc_method }}'
+        fc_url: '{{ _fc_url }}'
+      vars:
+        _fc_method: 'get'
+        _fc_url: '/vms/{{ vm_id }}'
+      register: output_vm_detail
+      when: vm_id is defined
+
+    - name: "[Task 3.2] - Ansible Built-in debug - Print Full VM Detail Response"
+      debug:
+        msg: '{{ output_vm_detail }}'
+      when: output_vm_detail is defined
+
+    # =========================================================================
+    # SECTION 4 — Extract and Display Disk → Datastore Mapping
+    # =========================================================================
+    - name: "[Task 4.1] - Ansible Built-in set_fact - Extract Disks Array"
+      set_fact:
+        vm_disks: "{{ output_vm_detail.ret.rsp.vmConfig.disks }}"
+      when:
+        - output_vm_detail is defined
+        - output_vm_detail.ret.rsp.vmConfig.disks is defined
+
+    - name: "[Task 4.2] - Ansible Built-in debug - Print Header Banner"
+      debug:
+        msg: "===== Datastore Names for each disk of VM '{{ user_config.vm_name }}' ====="
+      when: vm_disks is defined
+
+    - name: "[Task 4.3] - Ansible Built-in debug - Iterate and Print Disk to Datastore Mapping"
+      debug:
+        msg: "Disk [{{ item.sequenceNum }}] '{{ item.diskName }}' ({{ item.quantityGB }} GB) -> Datastore: {{ item.datastoreName }}"
+      loop: "{{ vm_disks }}"
+      when: vm_disks is defined

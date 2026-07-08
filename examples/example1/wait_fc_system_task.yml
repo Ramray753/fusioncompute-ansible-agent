@@ -1,0 +1,103 @@
+# =========================================================================
+# FusionCompute Asynchronous Task Polling Framework
+# =========================================================================
+# This module encapsulates the two-phase polling logic required to track
+# FusionCompute asynchronous system tasks. It wraps the fc_task_manager module
+# and is designed to wait for any type of task to complete.
+#
+# IMPORTANT: For any POST or PUT operation that returns a Task ID, you must
+# strictly follow the pattern below and include this task file instead of
+# directly using the fc_task_manager module.
+#
+# Expected input variables:
+#   async_output   - The registered output from the preceding fc_generic call
+#   task_id_suffix - A unique string suffix to namespace the persisted output fact
+#
+# Persisted output variable:
+#   _sys_query_output_${task_id_suffix} - The final task query result available
+#     for downstream consumption in the calling playbook.
+# =========================================================================
+
+- name: Extract Task ID
+  set_fact:
+    _sys_task_id: "{{ async_output.ret.rsp.urn.split(':') | last }}"
+
+- name: Print Task ID
+  debug:
+    msg: "{{ _sys_task_id }}"
+
+- name: Wait Until Primary Task Completed
+  huawei.fusioncompute.fc_task_manager:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    action: 'complete'
+    fc_task_id: '{{ _sys_task_id }}'
+    fc_wait_timeout: '{{ fc_wait_timeout }}'
+    fc_pull_interval: '{{ fc_pull_interval }}'
+  register: _sys_query_output
+
+- name: Save Unique Primary Task Output Fact
+  set_fact:
+    "_sys_query_output_{{ task_id_suffix }}": "{{ _sys_query_output }}"
+
+- name: Print Primary Task Output
+  debug:
+    msg: "{{ _sys_query_output }}"
+
+- name: Extract Entity URN
+  set_fact:
+    _sys_entity_urn: "{{ _sys_query_output.ret.rsp.entityUrn }}"
+
+- name: Print Entity URN
+  debug:
+    msg: "{{ _sys_entity_urn }}"
+
+- name: Get System Scheduling Task ID
+  huawei.fusioncompute.fc_generic:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    fc_method: 'get'
+    fc_url: '/tasks?entityUrn={{ _sys_entity_urn }}&status=running'
+  register: _sys_pagination_output
+
+- name: Save Unique Pagination Output Fact
+  set_fact:
+    "_sys_pagination_output_{{ task_id_suffix }}": "{{ _sys_pagination_output }}"
+
+- name: Print Pagination Output
+  debug:
+    msg: "{{ _sys_pagination_output }}"
+
+- name: Extract System Scheduling Task ID
+  set_fact:
+    _sys_scheduling_task_id: "{{ (_sys_pagination_output.ret.rsp.tasks | selectattr('type', 'equalto', 'InjectCustomizationTask') | first).taskId }}"
+  when: _sys_pagination_output.ret.rsp.tasks | selectattr('type', 'equalto', 'InjectCustomizationTask') | list | length > 0
+
+- name: Print System Scheduling Task ID
+  debug:
+    msg: "{{ _sys_scheduling_task_id }}"
+  when: _sys_scheduling_task_id is defined
+
+- name: Wait Until System Scheduling Task Completed
+  huawei.fusioncompute.fc_task_manager:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    action: 'complete'
+    fc_task_id: '{{ _sys_scheduling_task_id }}'
+    fc_wait_timeout: '{{ fc_wait_timeout }}'
+    fc_pull_interval: '{{ fc_pull_interval }}'
+  register: _sys_scheduling_task_output
+  when: _sys_scheduling_task_id is defined
+
+- name: Save Unique System Scheduling Task Output Fact
+  set_fact:
+    "_sys_query_output_{{ task_id_suffix }}": "{{ _sys_scheduling_task_output }}"
+  when: _sys_scheduling_task_id is defined
+
+- name: Print System Scheduling Task Output
+  debug:
+    msg: "{{ _sys_scheduling_task_output }}"
+  when: _sys_scheduling_task_id is defined

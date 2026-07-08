@@ -1,0 +1,121 @@
+# =========================================================================
+# FusionCompute Asynchronous Task Polling Module
+# =========================================================================
+# This file encapsulates the fc_task_manager module and provides a standardized
+# two-phase polling mechanism for any POST/PUT operation that returns a Task URN.
+#
+# Phase 1: Poll the primary task until completion (success or failure).
+# Phase 2: Detect and poll any system-scheduled follow-up task (e.g., customization
+#          injection) associated with the same entity URN.
+#
+# Expected input variables (passed via 'vars' when including this file):
+#   async_output    - The registered output from the fc_generic POST/PUT call.
+#   task_id_suffix  - A unique suffix string used to namespace the saved output facts.
+# =========================================================================
+
+- name: Extract Task ID
+  set_fact:
+    _sys_task_id: "{{ async_output.ret.rsp.taskUrn.split(':') | last }}"
+  when: async_output is not skipped
+
+- name: Print Task ID
+  debug:
+    msg: "{{ _sys_task_id }}"
+  when: async_output is not skipped
+
+- name: Wait Until Primary Task Completed
+  huawei.fusioncompute.fc_task_manager:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    action: 'complete'
+    fc_task_id: '{{ _sys_task_id }}'
+    fc_wait_timeout: '{{ fc_wait_timeout }}'
+    fc_pull_interval: '{{ fc_pull_interval }}'
+  register: _sys_primary_output
+  when: async_output is not skipped
+
+- name: Save Unique Primary Task Output Fact
+  set_fact:
+    "{{ '_sys_query_output_' + task_id_suffix }}": "{{ _sys_primary_output }}"
+  when: async_output is not skipped
+
+- name: Print Primary Task Output
+  debug:
+    msg: "{{ _sys_primary_output }}"
+  when: async_output is not skipped
+
+- name: Extract Entity URN
+  set_fact:
+    _sys_entity_urn: "{{ _sys_primary_output.ret.rsp.entityUrn }}"
+  when: async_output is not skipped
+
+- name: Print Entity URN
+  debug:
+    msg: "{{ _sys_entity_urn }}"
+  when: async_output is not skipped
+
+- name: Get System Scheduling Task ID
+  huawei.fusioncompute.fc_generic:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    fc_method: 'get'
+    fc_url: '/tasks?entityUrn={{ _sys_entity_urn }}&status=running'
+  register: _sys_pagination_output
+  when: async_output is not skipped
+
+- name: Save Unique Pagination Output Fact
+  set_fact:
+    "{{ '_sys_pagination_output_' + task_id_suffix }}": "{{ _sys_pagination_output }}"
+  when: async_output is not skipped
+
+- name: Print Pagination Output
+  debug:
+    msg: "{{ _sys_pagination_output }}"
+  when: async_output is not skipped
+
+- name: Extract System Scheduling Task ID
+  set_fact:
+    _sys_scheduled_task_id: "{{ (_sys_pagination_output.ret.rsp.tasks | selectattr('user', 'equalto', '-_system') | first).taskId | default('') }}"
+  when:
+    - async_output is not skipped
+    - _sys_pagination_output.ret.rsp.tasks | length > 0
+
+- name: Print System Scheduling Task ID
+  debug:
+    msg: "{{ _sys_scheduled_task_id }}"
+  when:
+    - async_output is not skipped
+    - _sys_scheduled_task_id is defined
+
+- name: Wait Until System Scheduling Task Completed
+  huawei.fusioncompute.fc_task_manager:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    action: 'complete'
+    fc_task_id: '{{ _sys_scheduled_task_id }}'
+    fc_wait_timeout: '{{ fc_wait_timeout }}'
+    fc_pull_interval: '{{ fc_pull_interval }}'
+  register: _sys_scheduled_output
+  when:
+    - async_output is not skipped
+    - _sys_scheduled_task_id is defined
+    - _sys_scheduled_task_id | length > 0
+
+- name: Save Unique System Scheduling Task Output Fact
+  set_fact:
+    "{{ '_sys_query_scheduled_output_' + task_id_suffix }}": "{{ _sys_scheduled_output }}"
+  when:
+    - async_output is not skipped
+    - _sys_scheduled_task_id is defined
+    - _sys_scheduled_task_id | length > 0
+
+- name: Print System Scheduling Task Output
+  debug:
+    msg: "{{ _sys_scheduled_output }}"
+  when:
+    - async_output is not skipped
+    - _sys_scheduled_task_id is defined
+    - _sys_scheduled_task_id | length > 0

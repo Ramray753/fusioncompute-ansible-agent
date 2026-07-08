@@ -1,0 +1,65 @@
+# =========================================================================
+# Inner-Loop Business Logic: Single Datastore Creation & Association
+# =========================================================================
+# This file is executed once per (host, datastore-name) pair.
+# It receives 'ds_name_item' from the inner loop and inherits
+# '_current_host_urn' from the outer scope (associate_datastores_per_host.yml).
+#
+# Workflow:
+#   1. Look up the existing datastore by name to retrieve its storage-unit URN (suUrn).
+#   2. Call 创建数据存储 (POST) to create the datastore and bind it to the target host.
+#   3. Poll the asynchronous task until completion.
+# =========================================================================
+
+# [Task 3.1] Fuzzy-search the existing datastore by its name to retrieve the
+# associated storage-unit URN (suUrn field).
+- name: "[Task 3.1] GET - Query datastore by name for {{ ds_name_item }}"
+  huawei.fusioncompute.fc_generic:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    fc_method: 'get'
+    fc_url: '/datastores?name={{ ds_name_item }}'
+  register: output_task_3_1
+
+# [Task 3.2] Extract the storage-unit URN (suUrn) from the first exact-match
+# datastore. The suUrn field (e.g., urn:sites:XXXX:storageunits:N*N) is used
+# directly as the storageUnitUrn parameter in the downstream datastore creation.
+- name: "[Task 3.2] Extract storage-unit URN for datastore {{ ds_name_item }}"
+  set_fact:
+    _current_su_urn: "{{ (output_task_3_1.ret.rsp.datastores | selectattr('name', 'equalto', ds_name_item) | first).suUrn }}"
+  when:
+    - output_task_3_1.ret.rsp.datastores | length > 0
+    - (output_task_3_1.ret.rsp.datastores | selectattr('name', 'equalto', ds_name_item) | list | length) > 0
+
+# [Task 3.3] Call 创建数据存储 (POST) to create a new datastore from the
+# discovered storage unit and bind it to the target host.
+# Required fields per API schema: hostUrn (string), storageUnitUrn (string),
+# name (string), useType (integer).
+# The useType parameter is intentionally unquoted to preserve its native
+# integer type (0/1/2) as declared in commons.yml, matching the API contract.
+- name: "[Task 3.3] POST - Create datastore {{ ds_name_item }} and associate with host"
+  huawei.fusioncompute.fc_generic:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    fc_method: 'post'
+    fc_url: '/datastores'
+    fc_body:
+      hostUrn: '{{ _current_host_urn }}'
+      storageUnitUrn: '{{ _current_su_urn }}'
+      name: '{{ ds_name_item }}'
+      useType: {{ use_type }}
+  register: output_task_3_3
+  when:
+    - _current_host_urn is defined
+    - _current_su_urn is defined
+
+# [Task 3.4] Invoke the standard asynchronous task polling module to wait
+# for the datastore creation task to complete before proceeding.
+- name: "[Task 3.4] Track and wait for datastore creation task for {{ ds_name_item }}"
+  include_tasks: wait_fc_system_task.yml
+  vars:
+    async_output: "{{ output_task_3_3 }}"
+    task_id_suffix: "task_3_3_{{ ds_name_item | replace('.', '_') | replace('-', '_') }}"
+  when: output_task_3_3 is not skipped
