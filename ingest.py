@@ -50,7 +50,9 @@ def extract_hierarchical_leaf_sections(file_path):
                 
             level = get_heading_level(p)
             if level is not None and level <= 4:
-                current_hierarchy[level] = text
+                # 🎯 CRITICAL FIX: Replace half-width slashes with full-width slashes to prevent URI routing conflicts
+                normalized_text = text.replace('/', '／')
+                current_hierarchy[level] = normalized_text
                 levels_to_clear = [k for k in current_hierarchy.keys() if k > level]
                 for lvl in levels_to_clear:
                     del current_hierarchy[lvl]
@@ -149,9 +151,9 @@ def embed_and_store_sections(collection, sections, file_name, batch_size=50):
                 logger.info(f"Database sync: Logged leaf segments up to index {i}/{total_sections}")
                 b_ids, b_embeddings, b_documents, b_metadatas = [], [], [], []
                 
-        except Exception as e:
-            logger.error(f"Execution terminated at section index {i}: {str(e)}")
-            raise e
+        except Exception as error:
+            logger.error(f"Execution terminated at section index {i}: {str(error)}")
+            raise error
 
 def main():
     docs_dir = "./docs"
@@ -167,8 +169,8 @@ def main():
             sections = extract_hierarchical_leaf_sections(file_path)
             embed_and_store_sections(collection, sections, file_name)
             logger.info(f"KV Ingestion successful for file: {file_name}\n" + "-"*60)
-        except Exception as e:
-            logger.error(f"Data migration aborted for file {file_name}: {str(e)}")
+        except Exception as error:
+            logger.error(f"Data migration aborted for file {file_name}: {str(error)}")
 
 if __name__ == "__main__":
     main()

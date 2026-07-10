@@ -2,7 +2,7 @@ import chromadb
 import ollama
 
 # Connect to the existing local persistent DB
-chroma_client = chromadb.PersistentClient(path="./chroma_db")
+chroma_client = chromadb.PersistentClient(path="../chroma_db")
 collection = chroma_client.get_collection(name="ansible_agent_knowledge")
 
 # Prompt for testing
