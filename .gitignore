@@ -1,0 +1,8 @@
+.vscode
+.DS_Store
+.env
+output_python
+output_ansible
+__pycache__
+chroma_db
+tmp/
