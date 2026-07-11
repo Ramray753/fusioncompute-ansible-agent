@@ -3,26 +3,33 @@ api_config:
     - "计算虚拟化接口"
     - "存储虚拟化接口"
     - "网络虚拟化接口"
-    - "OM API接口"
-  content_top_levels:
-    - "计算虚拟化接口"
-    - "存储虚拟化接口"
-    - "网络虚拟化接口"
-    - "OM API接口"
+    # - "OM API接口"
+    # - "备份管理接口"
+    # - "CDP容灾管理"
+    # - "事件上报接口"
   base_spec_top_level:
     - "API接口格式"
 
 ansible_config:
   module_spec_top_level:
     - "FusionCompute Ansible 模块"
-  single_sections:
-    - "Ansible Playbook 示例目录结构"
-    - "全局配置文件"
-    - "单次操作脚本文件"
-    - "单次操作运行示例"
-  batch_sequential_sections:
-    - "顺序批量操作脚本文件"
-    - "顺序批量操作运行示例"
-  batch_parallel_sections:
-    - "并发批量操作脚本文件"
-    - "并发批量操作运行示例"
+
+ansible_template:
+  single_example_files:
+    - "README.md"
+    - "commons.yml"
+    - "main_single_call.yml"
+  single_output_files:
+    - "main_single_call_output.txt"
+  sequential_example_files:
+    - "main_batch_sequential.yml"
+    - "stop_single_vm.yml"
+    - "vm_names_stop.csv"
+  sequential_output_files:
+    - "main_batch_sequential_output.txt"
+  parallel_example_files:
+    - "main_batch_parallel.yml"
+    - "start_single_vm.yml"
+    - "vm_names_start.csv"
+  parallel_output_files:
+    - "main_batch_parallel_output.txt"

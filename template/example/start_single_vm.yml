@@ -1,0 +1,37 @@
+# This file is invoked sequentially for each VM name parsed from the file.
+- name: TASK 11.4 - GET VM Details by Name in Batch
+  huawei.fusioncompute.fc_generic:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    fc_method: 'get'
+    fc_url: '/vms?name={{ vm_name_item }}' # Corresponding API: <查询虚拟机信息-过滤分页查询所有虚拟机信息>
+  register: output_task_11_4
+
+- name: TASK 11.5 - Extract VM ID for {{ vm_name_item }}
+  set_fact:
+    # Use selectattr to ensure an exact match against the VM name, preventing fuzzy query conflicts
+    _current_vm_id: "{{ (output_task_11_4.ret.rsp.vms | selectattr('name', 'equalto', vm_name_item) | first).urn.split(':') | last }}"
+  # Execute only if the matching asset is found in the returned array
+  when: 
+    - output_task_11_4.ret.rsp.vms | length > 0
+    - (output_task_11_4.ret.rsp.vms | selectattr('name', 'equalto', vm_name_item) | list | length) > 0
+
+- name: TASK 11.6 - Generic Module - VM Start in Batch
+  huawei.fusioncompute.fc_generic:
+    fc_hostname: '{{ fc_hostname }}' 
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    fc_method: 'post'
+    fc_url: '/vms/{{ _current_vm_id }}/action/start' # Corresponding API: <启动虚拟机>
+  register: output_task_11_6
+  # Target block execution depends on valid resolution of the identifier asset
+  when: output_task_11_4.ret.rsp.vms | length > 0 and _current_vm_id is defined
+
+- name: TASK 11.7 - Track and Wait for FusionCompute Tasks
+  include_tasks: wait_fc_system_task.yml
+  vars:
+    async_output: "{{ output_task_11_6 }}"
+    task_id_suffix: "task_11_6"
+  # Crucial safety check: Only query the tracking API if the stop task actually executed
+  when: output_task_11_6 is not skipped

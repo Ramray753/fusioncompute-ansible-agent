@@ -3,6 +3,7 @@ import yaml
 import urllib.parse
 import chromadb
 import ollama
+import mcp_tools
 
 # Establish absolute project root directory anchor (up two levels from mcp/mcp_resources.py)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -76,24 +77,35 @@ def fetch_api_headings() -> str:
         return "No registered core interface headings discovered in the target REST directory."
     return "\n".join([f"[{i+1:03d}] {h}" for i, h in enumerate(seen_headings)])
 
-def fetch_ansible_example(target_sections_key: str, section_label: str) -> str:
-    """Core logic to pull designated standard playbook sample architectures from vector store."""
-    all_records = KNOWLEDGE_COLLECTION.get(
-        where={"source": "fusioncompute_ansible_module_cleaned.docx"},
-        include=["metadatas", "documents"],
-        limit=1000
-    )
+def fetch_ansible_example_single() -> str:
+    """Fetch single execution templates and output logs combined."""
+    example_files = _load_config_list("ansible_template", "single_example_files")
+    output_files = _load_config_list("ansible_template", "single_output_files")
     
-    target_sections = _load_config_list("ANSIBLE_CONFIG", target_sections_key)
-    matched_blueprints = []
-    for idx, meta in enumerate(all_records.get("metadatas", [])):
-        heading = meta.get("heading", "")
-        if any(section in heading for section in target_sections):
-            matched_blueprints.append(f"### {section_label} Blueprint: {heading}\n{all_records['documents'][idx]}")
-            
-    if matched_blueprints:
-        return "\n\n---\n\n".join(matched_blueprints)
-    return f"{section_label} playbook blueprints are currently missing or unindexed."
+    example_content = mcp_tools.read_template_files(example_files, "example")
+    output_content = mcp_tools.read_template_files(output_files, "output")
+    
+    return f"=== EXAMPLE TEMPLATES ===\n{example_content}\n\n=== EXECUTION LOGS ===\n{output_content}"
+
+def fetch_ansible_example_sequential() -> str:
+    """Fetch sequential batch execution templates and output logs combined."""
+    example_files = _load_config_list("ansible_template", "sequential_example_files")
+    output_files = _load_config_list("ansible_template", "sequential_output_files")
+    
+    example_content = mcp_tools.read_template_files(example_files, "example")
+    output_content = mcp_tools.read_template_files(output_files, "output")
+    
+    return f"=== EXAMPLE TEMPLATES ===\n{example_content}\n\n=== EXECUTION LOGS ===\n{output_content}"
+
+def fetch_ansible_example_parallel() -> str:
+    """Fetch parallel batch execution templates and output logs combined."""
+    example_files = _load_config_list("ansible_template", "parallel_example_files")
+    output_files = _load_config_list("ansible_template", "parallel_output_files")
+    
+    example_content = mcp_tools.read_template_files(example_files, "example")
+    output_content = mcp_tools.read_template_files(output_files, "output")
+    
+    return f"=== EXAMPLE TEMPLATES ===\n{example_content}\n\n=== EXECUTION LOGS ===\n{output_content}"
 
 def fetch_global_spec(config_key: str, source_file: str) -> str:
     """Core logic to extract baseline protocol specifications under allowed chapters."""
@@ -121,7 +133,7 @@ def query_api_content_hybrid(keyword: str) -> str:
     decoded_keyword = urllib.parse.unquote(keyword).strip()
     
     filter_condition = {"source": "fusioncompute_8100_api_cleaned.docx"}
-    allowed_top_levels = _load_config_list("API_CONFIG", "content_top_levels")
+    allowed_top_levels = _load_config_list("API_CONFIG", "headings_top_levels")
 
     # Channel 1: Strict Substring Lookup over fully loaded records
     all_records = KNOWLEDGE_COLLECTION.get(where=filter_condition, include=["metadatas", "documents"], limit=1000)

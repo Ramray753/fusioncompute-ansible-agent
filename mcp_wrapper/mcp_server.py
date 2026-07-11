@@ -24,20 +24,20 @@ def get_api_headings() -> str:
     """Retrieve the complete technical section headings index of the FusionCompute REST API."""
     return mcp_resources.fetch_api_headings()
 
-@mcp.resource("fc://ansible/exmaple/single")
+@mcp.resource("fc://ansible/example/single")
 def get_ansible_example_single() -> str:
-    """Retrieve standard end-to-end single-operation playbook production architectures."""
-    return mcp_resources.fetch_ansible_example("single_sections", "Single Operation")
+    """Retrieve single-operation playbook architectures and their execution logs."""
+    return mcp_resources.fetch_ansible_example_single()
 
-@mcp.resource("fc://ansible/exmaple/sequential")
+@mcp.resource("fc://ansible/example/sequential")
 def get_ansible_example_sequential() -> str:
-    """Retrieve single-stream, ordered sequential batch process orchestration playbooks."""
-    return mcp_resources.fetch_ansible_example("batch_sequential_sections", "Sequential Batch")
+    """Retrieve ordered sequential batch process playbooks and their execution logs."""
+    return mcp_resources.fetch_ansible_example_sequential()
 
-@mcp.resource("fc://ansible/exmaple/parallel")
+@mcp.resource("fc://ansible/example/parallel")
 def get_ansible_example_parallel() -> str:
-    """Retrieve multi-stream, high-concurrency parallel automation script templates."""
-    return mcp_resources.fetch_ansible_example("batch_parallel_sections", "Parallel Batch")
+    """Retrieve high-concurrency parallel automation scripts and their execution logs."""
+    return mcp_resources.fetch_ansible_example_parallel()
 
 @mcp.resource("fc://api/spec")
 def get_api_spec() -> str:
@@ -61,6 +61,11 @@ def get_specific_api_content(keyword: str) -> str:
 # ==============================================================================
 # REGISTER MCP TOOLS (Actions with Hardware System Side-Effects)
 # ==============================================================================
+
+@mcp.tool()
+def initialize_output_dir() -> str:
+    """Creates target output directory and copies whitelisted system files. MUST be called first."""
+    return mcp_tools.initialize_output_dir()
 
 @mcp.tool()
 def write_modular_ansible_files(file_matrix: dict) -> str:

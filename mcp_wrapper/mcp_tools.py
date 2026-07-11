@@ -3,9 +3,26 @@ import yaml
 import subprocess
 import re
 import jinja2
+import shutil
 
-# Establish absolute project root directory anchor (up two levels from mcp/mcp_tools.py)
+# Establish absolute project root directory anchor...
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def _load_protected_whitelist() -> list:
+    """Dynamically load the protected file whitelist from conf.yaml."""
+    config_file = os.path.join(BASE_DIR, "conf", "conf.yaml")
+    if not os.path.exists(config_file):
+        config_file = os.path.join(BASE_DIR, "conf", "conf.yml")
+    try:
+        if os.path.exists(config_file):
+            with open(config_file, "r", encoding="utf-8") as file_handle:
+                config_data = yaml.safe_load(file_handle)
+                if config_data and "workspace" in config_data:
+                    return config_data["workspace"].get("protected_files", ["wait_fc_system_task.yml"])
+    except Exception:
+        pass
+    # Default fallback whitelist
+    return ["wait_fc_system_task.yml"]
 
 def _load_output_dir() -> str:
     """
@@ -31,17 +48,57 @@ def _load_output_dir() -> str:
             return default_dir
     except Exception:
         return default_dir
+    
+def read_template_files(file_list: list, sub_dir: str) -> str:
+    """Read specific template files from the physical template directory."""
+    content_blocks = []
+    target_dir = os.path.join(BASE_DIR, "template", sub_dir)
+    
+    for file_name in file_list:
+        file_path = os.path.join(target_dir, file_name)
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8") as f:
+                content_blocks.append(f"### File: {file_name}\n{f.read()}")
+        else:
+            content_blocks.append(f"### File: {file_name}\n[ERROR: TEMPLATE FILE NOT FOUND]")
+            
+    return "\n\n---\n\n".join(content_blocks)
+
+def initialize_output_dir() -> str:
+    """Creates the target output directory and copies protected whitelist files from templates."""
+    output_dir = _load_output_dir()
+    template_dir = os.path.join(BASE_DIR, "template", "example")
+    whitelist = _load_protected_whitelist()
+    
+    try:
+        os.makedirs(output_dir, exist_ok=True)
+        copied_files = []
+        for file_name in whitelist:
+            src = os.path.join(template_dir, file_name)
+            dst = os.path.join(output_dir, file_name)
+            if os.path.exists(src):
+                shutil.copy2(src, dst)
+                copied_files.append(file_name)
+        return f"[SUCCESS] Initialized workspace '{output_dir}'. Copied protected files: {', '.join(copied_files)}"
+    except Exception as error:
+        return f"[IO ERROR] Failed to initialize output directory. Details: {str(error)}"
 
 def write_files_to_workspace(file_matrix: dict) -> str:
-    """Executes physical file matrix deployment to local workspace disk topology securely."""
+    """Executes physical file matrix deployment with whitelist interception."""
     output_dir = _load_output_dir()
+    whitelist = _load_protected_whitelist()
     try:
         os.makedirs(output_dir, exist_ok=True)
         written_files = []
         
         for file_name, content in file_matrix.items():
             base_name = os.path.basename(file_name)
-            if not base_name.endswith(('.yml', '.yaml', '.py', '.conf')):
+            # Support more extensions like .csv for batch operations
+            if not base_name.endswith(('.yml', '.yaml', '.py', '.conf', '.csv')):
+                continue
+            
+            # [HARD INTERCEPTION] Prevent modification of whitelisted files
+            if base_name in whitelist:
                 continue
                 
             file_path = os.path.join(output_dir, base_name)
@@ -54,10 +111,16 @@ def write_files_to_workspace(file_matrix: dict) -> str:
         return f"[IO ERROR] Failed to commit modular files to disk. Details: {str(error)}"
 
 def read_file_from_workspace(file_name: str) -> str:
-    """Executes local file read operations from absolute workspace path to support auditing workflows."""
+    """Executes local file read operations with whitelist interception."""
     output_dir = _load_output_dir()
-    target_path = os.path.join(output_dir, os.path.basename(file_name))
+    base_name = os.path.basename(file_name)
+    whitelist = _load_protected_whitelist()
     
+    # [HARD INTERCEPTION] Prevent reading of whitelisted files
+    if base_name in whitelist:
+        return f"[SECURITY ACCESS DENIED] Reading the protected file '{base_name}' is strictly prohibited by security rules."
+        
+    target_path = os.path.join(output_dir, base_name)
     if not os.path.exists(target_path):
         return f"[IO ERROR] Requested playbook file '{file_name}' does not exist in output directory '{output_dir}'."
         

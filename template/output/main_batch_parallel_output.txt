@@ -1,0 +1,265 @@
+[root@api-test ansible]# ansible-playbook main_batch_parallel.yml 
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+
+PLAY [FusionCompute Ansible Example For Agent - Best Practice for Batch API Calls in Parallel] ***********************************************************************************
+
+TASK [Gathering Facts] ***********************************************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 11.1 - Read file lines using built-in file lookup] ********************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 11.2 - Dynamically add VMs to a temporary inventory group] ************************************************************************************************************
+changed: [localhost] => (item=api-test-1)
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+changed: [localhost] => (item=api-test-10)
+
+PLAY [TASK 11.3 - Execute Batch VM Start Concurrently] ***************************************************************************************************************************
+
+TASK [Include VM stop sequence for the current batch] ****************************************************************************************************************************
+included: /root/Desktop/ansible/ansible/start_single_vm.yml for api-test-1, api-test-2, api-test-3, api-test-4, api-test-5, api-test-6, api-test-7, api-test-8, api-test-9, api-test-10
+
+TASK [TASK 11.4 - GET VM Details by Name in Batch] *******************************************************************************************************************************
+
+ok: [api-test-1]
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+ok: [api-test-10]
+
+TASK [TASK 11.5 - Extract VM ID for api-test-1] **********************************************************************************************************************************
+ok: [api-test-1]
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+ok: [api-test-10]
+
+TASK [TASK 11.6 - Generic Module - VM Start in Batch] ****************************************************************************************************************************
+changed: [api-test-1]
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+changed: [api-test-10]
+
+TASK [TASK 11.7 - Track and Wait for FusionCompute Tasks] ************************************************************************************************************************
+included: /root/Desktop/ansible/ansible/wait_fc_system_task.yml for api-test-1, api-test-2, api-test-3, api-test-4, api-test-5, api-test-6, api-test-7, api-test-8, api-test-9, api-test-10
+
+TASK [Extract Task ID] ***********************************************************************************************************************************************************
+ok: [api-test-1]
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+ok: [api-test-10]
+
+TASK [Print Task ID] *************************************************************************************************************************************************************
+ok: [api-test-1] => {
+    "msg": "1777843"
+}
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+ok: [api-test-10] => {
+    "msg": "1777851"
+}
+
+TASK [Wait Until Primary Task Completed] *****************************************************************************************************************************************
+changed: [api-test-1]
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+changed: [api-test-10]
+
+TASK [Save Unique Primary Task Output Fact] **************************************************************************************************************************************
+ok: [api-test-1]
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+ok: [api-test-10]
+
+TASK [Print Primary Task Output] *************************************************************************************************************************************************
+ok: [api-test-1] => {
+    "msg": {
+        "changed": true,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "cancelable": false,
+                "cancelled": false,
+                "costTime": "18",
+                "entityName": "api-test-1",
+                "entityUrn": "urn:sites:098A109B:vms:i-00000501",
+                "finishTime": "2026-07-07 17:52:56",
+                "isRetry": false,
+                "isRollback": false,
+                "localFinishTime": 1783417976000,
+                "localStartTime": 1783417958000,
+                "progress": 100,
+                "relateTaskIds": [],
+                "requestId": "9aac10c0-c78a-42c0-97d1-f10c7ff4ffb4",
+                "startTime": "2026-07-07 17:52:38",
+                "status": "success",
+                "taskFrom": 1,
+                "taskType": "StartVmTask",
+                "type": "StartVmTask",
+                "uri": "/service/sites/098A109B/tasks/1777843",
+                "urn": "urn:sites:098A109B:tasks:1777843",
+                "user": "api_user"
+            }
+        }
+    }
+}
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+ok: [api-test-10] => {
+    "msg": {
+        "changed": true,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "cancelable": false,
+                "cancelled": false,
+                "costTime": "17",
+                "entityName": "api-test-10",
+                "entityUrn": "urn:sites:098A109B:vms:i-0000050A",
+                "finishTime": "2026-07-07 17:52:56",
+                "isRetry": false,
+                "isRollback": false,
+                "localFinishTime": 1783417976000,
+                "localStartTime": 1783417959000,
+                "progress": 100,
+                "relateTaskIds": [],
+                "requestId": "c52fdf85-15c5-4d44-a33d-9a7255b767d6",
+                "startTime": "2026-07-07 17:52:39",
+                "status": "success",
+                "taskFrom": 1,
+                "taskType": "StartVmTask",
+                "type": "StartVmTask",
+                "uri": "/service/sites/098A109B/tasks/1777851",
+                "urn": "urn:sites:098A109B:tasks:1777851",
+                "user": "api_user"
+            }
+        }
+    }
+}
+
+TASK [Extract Entity URN] ********************************************************************************************************************************************************
+ok: [api-test-1]
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+ok: [api-test-10]
+
+TASK [Print Entity URN] **********************************************************************************************************************************************************
+ok: [api-test-1] => {
+    "msg": "urn:sites:098A109B:vms:i-00000501"
+}
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+ok: [api-test-10] => {
+    "msg": "urn:sites:098A109B:vms:i-0000050A"
+}
+
+TASK [Get System Scheduling Task ID] *********************************************************************************************************************************************
+ok: [api-test-1]
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+ok: [api-test-10]
+
+TASK [Save Unique Pagination Output Fact] ****************************************************************************************************************************************
+ok: [api-test-1]
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+ok: [api-test-10]
+
+TASK [Print Pagination Output] ***************************************************************************************************************************************************
+ok: [api-test-1] => {
+    "msg": {
+        "changed": false,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "tasks": [
+                    {
+                        "cancelable": false,
+                        "cancelled": false,
+                        "costTime": "null",
+                        "entityName": "Jumper-z00925541",
+                        "entityUrn": "urn:sites:098A109B:vms:i-00000036",
+                        "isRetry": false,
+                        "isRollback": false,
+                        "localFinishTime": 0,
+                        "localStartTime": 1782727566000,
+                        "progress": 99,
+                        "relateTaskIds": [],
+                        "requestId": "3745403a-0ae2-4ca5-916d-0afbed2f6d99",
+                        "startTime": "2026-06-29 18:06:06",
+                        "status": "running",
+                        "taskFrom": 1,
+                        "taskId": "1712868",
+                        "type": "SnapshotResumeVmTask",
+                        "uri": "/service/sites/098A109B/tasks/1712868",
+                        "urn": "urn:sites:098A109B:tasks:1712868",
+                        "user": "admin"
+                    }
+                ],
+                "total": 1
+            }
+        }
+    }
+}
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+ok: [api-test-10] => {
+    "msg": {
+        "changed": false,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "tasks": [
+                    {
+                        "cancelable": false,
+                        "cancelled": false,
+                        "costTime": "null",
+                        "entityName": "Jumper-z00925541",
+                        "entityUrn": "urn:sites:098A109B:vms:i-00000036",
+                        "isRetry": false,
+                        "isRollback": false,
+                        "localFinishTime": 0,
+                        "localStartTime": 1782727566000,
+                        "progress": 99,
+                        "relateTaskIds": [],
+                        "requestId": "3745403a-0ae2-4ca5-916d-0afbed2f6d99",
+                        "startTime": "2026-06-29 18:06:06",
+                        "status": "running",
+                        "taskFrom": 1,
+                        "taskId": "1712868",
+                        "type": "SnapshotResumeVmTask",
+                        "uri": "/service/sites/098A109B/tasks/1712868",
+                        "urn": "urn:sites:098A109B:tasks:1712868",
+                        "user": "admin"
+                    }
+                ],
+                "total": 1
+            }
+        }
+    }
+}
+
+TASK [Extract System Scheduling Task ID] *****************************************************************************************************************************************
+ok: [api-test-1]
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+ok: [api-test-10]
+
+TASK [Print System Scheduling Task ID] *******************************************************************************************************************************************
+ok: [api-test-1] => {
+    "msg": ""
+}
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+ok: [api-test-10] => {
+    "msg": ""
+}
+
+TASK [Wait Until System Scheduling Task Completed] *******************************************************************************************************************************
+skipping: [api-test-1]
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+skipping: [api-test-10]
+
+TASK [Save Unique System Scheduling Task Output Fact] ****************************************************************************************************************************
+skipping: [api-test-1]
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+skipping: [api-test-10]
+
+TASK [Print System Scheduling Task Output] ***************************************************************************************************************************************
+skipping: [api-test-1]
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...
+skipping: [api-test-10]
+
+PLAY RECAP ***********************************************************************************************************************************************************************
+api-test-1                 : ok=17   changed=2    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0
+... [VMs api-test-2 through api-test-9 omitted for brevity] ...   
+api-test-10                : ok=17   changed=2    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
+localhost                  : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0  

@@ -1,0 +1,1044 @@
+[root@api-test ansible]# ansible-playbook main_single_call.yml 
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+
+PLAY [FusionCompute Ansible Example For Agent - Best Practice for Single API Calls] **********************************************************************************************
+
+TASK [Gathering Facts] ***********************************************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 1.1 - Inherit Module - Login Test] ************************************************************************************************************************************
+changed: [localhost]
+
+TASK [TASK 1.2 - Print Output] ***************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": true,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "fc_site_id": "098A109B",
+            "fc_token": "EB6A29E9F31569D70A461397BD550FD03DF543E3A2C551C40"
+        }
+    }
+}
+
+TASK [Task 1.3 - Extract Site ID] ************************************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 1.4 - Print Site ID] **************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": "098A109B"
+}
+
+TASK [TASK 2.1 - Generic Module - Get VM ID by Name] *****************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 2.2 - Print Output] ***************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": false,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "total": 1,
+                "vms": [
+                    {
+                        "arch": "x86",
+                        "cdRomStatus": "empty",
+                        "clusterName": "ManagementCluster",
+                        "clusterUrn": "urn:sites:098A109B:clusters:130",
+                        "createTime": "2026-07-07 18:03:59",
+                        "createTimeUTC": "2026-07-07 10:03:59",
+                        "description": "",
+                        "drStatus": 9,
+                        "hostName": "CNA3",
+                        "hostUrn": "urn:sites:098A109B:hosts:397",
+                        "hugePage": "4K",
+                        "idle": 33,
+                        "initSyncStatus": 0,
+                        "isBindingHost": false,
+                        "isLinkClone": false,
+                        "isTemplate": false,
+                        "location": "urn:sites:098A109B:clusters:130",
+                        "locationName": "ManagementCluster",
+                        "minCompatibleimcSetting": "Cascadelake-Server",
+                        "name": "api-demo-001",
+                        "objectPrivs": [
+                            "303.030"
+                        ],
+                        "params": {
+                            "snapshotNum": "0"
+                        },
+                        "pvDriverStatus": "running",
+                        "rpoStatus": 0,
+                        "status": "running",
+                        "toolInstallStatus": "empty",
+                        "toolsVersion": "3.0.0.045",
+                        "uri": "/service/sites/098A109B/vms/i-0000050E",
+                        "urn": "urn:sites:098A109B:vms:i-0000050E",
+                        "uuid": "52ea33fe-7bf3-45ef-b669-101086679723",
+                        "vmConfig": {
+                            "nics": [
+                                {
+                                    "ip": "192.168.0.1",
+                                    "ipList": "192.168.0.1",
+                                    "ips6": [],
+                                    "mac": "28:6e:d4:89:5e:fb",
+                                    "sequenceNum": 0
+                                }
+                            ],
+                            "numaNodes": 0,
+                            "properties": {
+                                "dpiVmType": "",
+                                "secureVmType": ""
+                            },
+                            "vtpm": {}
+                        },
+                        "vmType": 0
+                    }
+                ]
+            }
+        }
+    }
+}
+
+TASK [Task 2.3 - Extract VM ID] **************************************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 2.4 - Print VM ID] ****************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": "i-0000050E"
+}
+
+TASK [TASK 2.5 - Generic Module - Get VM Details by ID] **************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 2.6 - Print Output] ***************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": false,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "additionalStatus": [],
+                "arch": "x86",
+                "attachAtPowerOn": false,
+                "cdRomStatus": "empty",
+                "clusterName": "ManagementCluster",
+                "clusterUrn": "urn:sites:098A109B:clusters:130",
+                "createTime": "2026-07-07 10:03:59",
+                "customProperties": {},
+                "dataStoreUrns": [
+                    "urn:sites:098A109B:datastores:7"
+                ],
+                "description": "",
+                "drStatus": 9,
+                "floppyStatus": "empty",
+                "haConfig": {
+                    "hostFaultPolicy": 2,
+                    "vmFaultPolicy": 3
+                },
+                "hostName": "CNA3",
+                "hostUrn": "urn:sites:098A109B:hosts:397",
+                "idle": 33,
+                "initSyncStatus": 0,
+                "isBindingHost": false,
+                "isEnableCdp": false,
+                "isEnableIntegrity": false,
+                "isLinkClone": false,
+                "isMultiDiskSpeedup": false,
+                "isTemplate": false,
+                "location": "urn:sites:098A109B:clusters:130",
+                "locationName": "ManagementCluster",
+                "minCompatibleimcSetting": "Cascadelake-Server",
+                "name": "api-demo-001",
+                "needMergeSnapshot": false,
+                "objectPrivs": [
+                    "303.030"
+                ],
+                "osOptions": {
+                    "guestOSName": "EulerOS 2.12 64bit",
+                    "hostname": "EulerOS-BaseTemplate",
+                    "osType": "Linux",
+                    "osVersion": 10082,
+                    "password": ""
+                },
+                "params": {
+                    "PCI_IB_CARD": "0",
+                    "vmSubStatus": "0"
+                },
+                "pvDriverStatus": "running",
+                "rpoStatus": 0,
+                "runningTime": 2009,
+                "status": "running",
+                "toolInstallStatus": "empty",
+                "toolsVersion": "3.0.0.045",
+                "uri": "/service/sites/098A109B/vms/i-0000050E",
+                "urn": "urn:sites:098A109B:vms:i-0000050E",
+                "uuid": "52ea33fe-7bf3-45ef-b669-101086679723",
+                "vmConfig": {
+                    "cpu": {
+                        "coresPerSocket": 1,
+                        "cpuBindType": "nobind",
+                        "cpuHotPlug": 0,
+                        "cpuPolicy": "shared",
+                        "cpuThreadPolicy": "prefer",
+                        "hyperThreading": false,
+                        "isCpuClusterBind": false,
+                        "limit": 0,
+                        "numaBinds": [],
+                        "quantity": 1,
+                        "reservation": 0,
+                        "weight": 500
+                    },
+                    "disks": [
+                        {
+                            "accessMode": 0,
+                            "bootOrder": 1,
+                            "cacheMode": "none",
+                            "dataCopy": true,
+                            "datastoreName": "eVol-15",
+                            "datastoreUrn": "urn:sites:098A109B:datastores:7",
+                            "devName": "vda",
+                            "diskName": "i-0000050E-vda",
+                            "encrypted": "0",
+                            "encryptedType": 0,
+                            "indepDisk": false,
+                            "ioMode": "dataplane",
+                            "ioWeight": 0,
+                            "isDataCopy": true,
+                            "isThin": true,
+                            "maxReadBytes": 0,
+                            "maxReadRequest": 0,
+                            "maxWriteBytes": 0,
+                            "maxWriteRequest": 0,
+                            "originVolumeFormat": "raw",
+                            "pciType": "VIRTIO",
+                            "persistentDisk": true,
+                            "quantityGB": 10,
+                            "sequenceNum": 1,
+                            "storageProtocol": "0",
+                            "storageType": "advanceSan",
+                            "systemVolume": true,
+                            "thin": true,
+                            "totalRWBytes": 0,
+                            "totalRWRequest": 0,
+                            "type": "normal",
+                            "volType": 0,
+                            "volumeAttachStatus": "attached",
+                            "volumeFormat": "raw",
+                            "volumeUrl": "scsi-36c8c46510069fa9063648b530000015d",
+                            "volumeUrn": "urn:sites:098A109B:volumes:1679",
+                            "volumeUseType": "NORMAL_VOL",
+                            "volumeUuid": "05348589-06df-4564-8265-e43c90558d3e"
+                        }
+                    ],
+                    "graphicsCard": {
+                        "size": 4,
+                        "type": "cirrus"
+                    },
+                    "memory": {
+                        "hugePage": "4K",
+                        "limit": 0,
+                        "memHotPlug": 0,
+                        "quantityMB": 2048,
+                        "reservation": 0,
+                        "weight": 20480
+                    },
+                    "nics": [
+                        {
+                            "bootOrder": 3,
+                            "connectAtPowerOn": true,
+                            "enableSecurityGroup": false,
+                            "ip": "192.168.0.1",
+                            "ipList": "192.168.0.1",
+                            "ips6": [],
+                            "linkStatus": "connected",
+                            "mac": "28:6e:d4:89:5e:fb",
+                            "name": "Network Adapter 0",
+                            "nicConfig": {
+                                "pollUs": 0,
+                                "queues": 1,
+                                "vringbuf": 256
+                            },
+                            "nicType": 0,
+                            "portGroupName": "managePortgroup",
+                            "portGroupUrn": "urn:sites:098A109B:dvswitchs:1:portgroups:1",
+                            "portId": "1835",
+                            "securityGroupName": "",
+                            "sequenceNum": 0,
+                            "status": "connect",
+                            "uri": "/service/sites/098A109B/vms/i-0000050E/nics/0",
+                            "urn": "urn:sites:098A109B:vms:i-0000050E:nics:0",
+                            "virtIo": 1
+                        }
+                    ],
+                    "numaNodes": 0,
+                    "pcis": [],
+                    "properties": {
+                        "antivirusMode": "",
+                        "attachType": false,
+                        "bootFirmware": "BIOS",
+                        "bootFirmwareTime": 0,
+                        "bootOption": "disk",
+                        "cdRomBootOrder": 2,
+                        "clockMode": "synchClock",
+                        "consolelog": 1,
+                        "dpiVmType": "",
+                        "emulatorPin": [],
+                        "enableKae": false,
+                        "enableSpice": false,
+                        "enableWatchDog": false,
+                        "evsAffinity": false,
+                        "gpuShareType": "normal",
+                        "isAutoAdjustNuma": false,
+                        "isAutoUpgrade": true,
+                        "isEnableFt": false,
+                        "isEnableMemVol": false,
+                        "isHpet": false,
+                        "isReserveResource": false,
+                        "isSecureBoot": false,
+                        "migrateSetting": "passThrough",
+                        "numaAffinity": [],
+                        "realtime": false,
+                        "reoverByHost": false,
+                        "secureVmType": "",
+                        "systemArchitecture": "SMP",
+                        "useLatestQemuVersion": 0,
+                        "vmFaultProcess": "notprocess",
+                        "vmVncKeymapSetting": 7
+                    },
+                    "usb": [
+                        {
+                            "controllerType": "EHCI+UHCI",
+                            "device": []
+                        },
+                        {
+                            "controllerType": "xHCI",
+                            "device": []
+                        }
+                    ],
+                    "vtpm": {}
+                },
+                "vmRebootConfig": {
+                    "cpu": {
+                        "coresPerSocket": 1,
+                        "limit": 0,
+                        "quantity": 1,
+                        "reservation": 0,
+                        "weight": 500
+                    },
+                    "memory": {
+                        "limit": 0,
+                        "quantityMB": 2048,
+                        "reservation": 0,
+                        "weight": 20480
+                    }
+                },
+                "vmType": 0,
+                "vncAcessInfo": {
+                    "hostIp": "51.36.55.86",
+                    "vncPassword": "lLV%/[2d",
+                    "vncPort": 5910,
+                    "vncUserName": "i-0000050E"
+                }
+            }
+        }
+    }
+}
+
+TASK [TASK 2.7 - Extract the First Disk ID] **************************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 2.8 - Print Output] ***************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": "1679"
+}
+
+TASK [TASK 2.9 - Generic Module - Get Disk Details by ID] ************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 2.10 - Print Output] **************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": false,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "customProperties": {},
+                "datastoreName": "eVol-15",
+                "datastoreUrn": "urn:sites:098A109B:datastores:7",
+                "drExtParams": "",
+                "encrypted": "0",
+                "indepDisk": false,
+                "ioWeight": 0,
+                "isDiffVol": false,
+                "isThin": true,
+                "lunId": "349",
+                "maxReadBytes": 0,
+                "maxReadRequest": 0,
+                "maxWriteBytes": 0,
+                "maxWriteRequest": 0,
+                "name": "i-0000050E-vda",
+                "pciType": "VIRTIO",
+                "persistentDisk": true,
+                "pvscsiSupport": 0,
+                "quantityGB": 10,
+                "siocFlag": 0,
+                "srcVolumeUrn": "null",
+                "status": "USE",
+                "storageProtocol": "0",
+                "storageSN": "2102353HMP10M3000004",
+                "storageType": "advanceSan",
+                "storageVersion": "V6",
+                "totalRWBytes": 0,
+                "totalRWRequest": 0,
+                "type": "normal",
+                "uri": "/service/sites/098A109B/volumes/1679",
+                "urn": "urn:sites:098A109B:volumes:1679",
+                "userUsedSize": 1126,
+                "uuid": "05348589-06df-4564-8265-e43c90558d3e",
+                "volNameOnDev": "FC-098A109B-00001679-5320CB87",
+                "volProvisionSize": 1361,
+                "volType": 0,
+                "volumeFormat": "raw",
+                "volumeUrl": "scsi-36c8c46510069fa9063648b530000015d",
+                "volumeUseType": 0
+            }
+        }
+    }
+}
+
+TASK [TASK 3.1 - Generic Module - Get Cluster ID by Name] ************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 3.2 - Print Output] ***************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": false,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "clusters": [
+                    {
+                        "arch": "x86",
+                        "cpuResource": {
+                            "allocatedSizeMHz": 25200,
+                            "totalSizeMHz": 504000
+                        },
+                        "cpuVendor": "Intel",
+                        "isAutoAdjustNuma": false,
+                        "isEnableDrs": true,
+                        "isEnableHa": true,
+                        "memResource": {
+                            "allocatedSizeMB": 91766,
+                            "memTotalSizeMB": 0,
+                            "memUsedSizeMB": 0,
+                            "realtimeUsedSizeMB": 572106,
+                            "totalSizeMB": 770368
+                        },
+                        "name": "ManagementCluster",
+                        "osVendor": "euler",
+                        "tag": "domain/default",
+                        "uri": "/service/sites/098A109B/clusters/130",
+                        "urn": "urn:sites:098A109B:clusters:130"
+                    }
+                ]
+            }
+        }
+    }
+}
+
+TASK [Task 3.3 - Extract Cluster ID] *********************************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 3.4 - Print Cluster ID] ***********************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": "130"
+}
+
+TASK [TASK 4.1 - Generic Module - Get Host ID by Name] ***************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 4.2 - Print Output] ***************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": false,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "hosts": [
+                    {
+                        "arch": "x86",
+                        "attachedISOVMs": [
+                            "urn:sites:098A109B:vms:i-000004EB"
+                        ],
+                        "bmcIp": "51.36.55.81",
+                        "bmcUserName": "Administrator",
+                        "clusterEnableIOTailor": false,
+                        "clusterName": "ManagementCluster",
+                        "clusterUrn": "urn:sites:098A109B:clusters:130",
+                        "computeResourceStatics": "/service/sites/098A109B/hosts/189/computeResourceStatics",
+                        "cpuMHz": 2100,
+                        "cpuMuxRatio": "150.00",
+                        "cpuOverCommitmentRatio": 0,
+                        "cpuQuantity": 72,
+                        "cpuResource": {
+                            "allocatedSizeMHz": 16800,
+                            "emulatorCPUs": "",
+                            "hostTotalSizeMHz": 168000,
+                            "ioStackCPUs": "",
+                            "ioStackVhostCPUs": "",
+                            "manageCPUs": "0,1,2,3,40,41,42,43",
+                            "totalSizeMHz": 151200
+                        },
+                        "cpuTotalCores": 72,
+                        "cpuUsage": "16.02",
+                        "cpuUsedCores": 108,
+                        "cpuVendor": "Intel",
+                        "description": "",
+                        "gdvmMemoryReboot": 128,
+                        "gpuCapacity": -1,
+                        "gpuCapacityReboot": -1,
+                        "gsvmMemoryReboot": 128,
+                        "hostMultiPathMode": "CURRENCY",
+                        "hostRealName": "DCS-CHENGDU-L2-1-CNA1",
+                        "ip": "51.36.55.82",
+                        "isFailOverHost": false,
+                        "isMaintaining": false,
+                        "logicDiskUsage": "4.96",
+                        "maxImcSetting": "Cascadelake-Server",
+                        "memMaxMuxRatio": "207.74",
+                        "memMuxRatio": "118.70",
+                        "memQuantityMB": 243514,
+                        "memResource": {
+                            "allocatedSizeMB": 46366,
+                            "hostTotalSizeMB": 256826,
+                            "realtimeUsedSizeMB": 207825,
+                            "totalSizeMB": 243514
+                        },
+                        "memTotalSizeMB": 243514,
+                        "memUsage": "86.56",
+                        "memUsedSizeMB": 289054,
+                        "memoryOverCommitmentRatio": 0,
+                        "multiPathMode": "CURRENCY",
+                        "name": "CNA1",
+                        "nicQuantity": 10,
+                        "ntpCycle": 64,
+                        "ntpIp1": "51.36.55.82",
+                        "ntpIp2": "",
+                        "ntpIp3": "",
+                        "osVendor": "euler",
+                        "physicalCpuQuantity": 2,
+                        "runningTime": 618650,
+                        "status": "normal",
+                        "stealTaskFlag": false,
+                        "uri": "/service/sites/098A109B/hosts/189",
+                        "urn": "urn:sites:098A109B:hosts:189",
+                        "uuid": "dc560f2f-8443-4628-9765-bebe36e57802",
+                        "version": "8.9.0",
+                        "vmCount": 26,
+                        "xcopyFlag": 0
+                    }
+                ],
+                "total": 1
+            }
+        }
+    }
+}
+
+TASK [Task 4.3 - Extract Host ID] ************************************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 4.4 - Print Host ID] **************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": "189"
+}
+
+TASK [TASK 5.1 - Generic Module - Get Datastore ID by Name] **********************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 5.2 - Print Output] ***************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": false,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "datastores": [
+                    {
+                        "actualCapacityGB": 5606,
+                        "actualFreeSizeGB": 4907,
+                        "capacityGB": 5606,
+                        "description": "",
+                        "dsLockType": 0,
+                        "freeSizeGB": 4907,
+                        "hostConnectProtocols": [
+                            {
+                                "accessProtocol": "iSCSI",
+                                "urn": "397"
+                            },
+                            {
+                                "accessProtocol": "iSCSI",
+                                "urn": "189"
+                            },
+                            {
+                                "accessProtocol": "iSCSI",
+                                "urn": "204"
+                            }
+                        ],
+                        "hosts": [
+                            "urn:sites:098A109B:hosts:397",
+                            "urn:sites:098A109B:hosts:189",
+                            "urn:sites:098A109B:hosts:204"
+                        ],
+                        "isThin": true,
+                        "name": "eVol-15",
+                        "refreshTime": "2026-07-07 10:36:47",
+                        "status": "NORMAL",
+                        "storageType": "advanceSan",
+                        "storageUnits": [
+                            {
+                                "sdName": "OceanStor Dorado 5300 V6 - 15",
+                                "suName": "StoragePool001",
+                                "type": "advanceSan",
+                                "urn": "2*0"
+                            }
+                        ],
+                        "suIdList": [],
+                        "suName": "StoragePool001",
+                        "suUrn": "urn:sites:098A109B:storageunits:2*0",
+                        "thinRate": 100,
+                        "tierSize": [
+                            0,
+                            5741568,
+                            0
+                        ],
+                        "uri": "/service/sites/098A109B/datastores/7",
+                        "urn": "urn:sites:098A109B:datastores:7",
+                        "usedSizeGB": 11521,
+                        "version": "V6"
+                    }
+                ],
+                "total": 1
+            }
+        }
+    }
+}
+
+TASK [TASK 5.3 - Extract Datastore ID] *******************************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 5.4 - Print Datastore ID] *********************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": "7"
+}
+
+TASK [TASK 6.1 - Generic Module - Get DVS ID by Name] ****************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 6.2 - Print Output] ***************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": false,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "dvSwitchs": [
+                    {
+                        "description": "",
+                        "isIgmpSnooping": false,
+                        "mtu": 1500,
+                        "name": "ManagementDVS",
+                        "portGroupNum": 1,
+                        "qosType": 0,
+                        "type": 0,
+                        "uri": "/service/sites/098A109B/dvswitchs/1",
+                        "urn": "urn:sites:098A109B:dvswitchs:1"
+                    }
+                ]
+            }
+        }
+    }
+}
+
+TASK [TASK 6.3 - Extract DVS ID] *************************************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 6.4 - Print DVS ID] ***************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": "1"
+}
+
+TASK [TASK 7.1 - Generic Module - Get PortGroup ID by Name] **********************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 7.2 - Print Output] ***************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": false,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "portGroups": [
+                    {
+                        "description": "",
+                        "forgedTransmit": 1,
+                        "ipBcstSuppress": 0,
+                        "isCalcTCPCheckSum": false,
+                        "isDhcpIsolation": false,
+                        "isIpMacBind": false,
+                        "isQinQEnable": false,
+                        "macChange": 1,
+                        "name": "managePortgroup",
+                        "portType": 0,
+                        "priority": 2,
+                        "rxBurstSize": 0,
+                        "rxLimit": 0,
+                        "rxPeakLimit": 0,
+                        "txBurstSize": 1000,
+                        "txLimit": 1000,
+                        "txPeakLimit": 1000,
+                        "txWeight": 0,
+                        "uri": "/service/sites/098A109B/dvswitchs/1/portgroups/1",
+                        "urn": "urn:sites:098A109B:dvswitchs:1:portgroups:1",
+                        "vlanId": 0,
+                        "vlanType": 0
+                    }
+                ],
+                "total": 1
+            }
+        }
+    }
+}
+
+TASK [TASK 7.3 - Extract Port Group ID] ******************************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 7.4 - Print Port Group ID] ********************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": "1"
+}
+
+TASK [TASK 8.1 - Generic Module - Get VM template ID by Name] ********************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 8.2 - Print Output] ***************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": false,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "total": 1,
+                "vms": [
+                    {
+                        "arch": "x86",
+                        "cdRomStatus": "empty",
+                        "clusterName": "ManagementCluster",
+                        "clusterUrn": "urn:sites:098A109B:clusters:130",
+                        "createTime": "2026-07-07 15:16:55",
+                        "createTimeUTC": "2026-07-07 07:16:55",
+                        "description": "",
+                        "drStatus": 9,
+                        "hostName": "",
+                        "hostUrn": "",
+                        "hugePage": "4K",
+                        "idle": -1,
+                        "initSyncStatus": 0,
+                        "isBindingHost": false,
+                        "isLinkClone": false,
+                        "isTemplate": true,
+                        "location": "urn:sites:098A109B:clusters:130",
+                        "locationName": "ManagementCluster",
+                        "name": "CentOS Stream 9",
+                        "objectPrivs": [],
+                        "params": {
+                            "snapshotNum": "0"
+                        },
+                        "pvDriverStatus": "notRunning",
+                        "rpoStatus": 0,
+                        "status": "stopped",
+                        "toolInstallStatus": "empty",
+                        "uri": "/service/sites/098A109B/vms/i-00000500",
+                        "urn": "urn:sites:098A109B:vms:i-00000500",
+                        "uuid": "2e5d32c0-7d56-4535-befa-df7dff29b2c9",
+                        "vmConfig": {
+                            "nics": [
+                                {
+                                    "ip": "0.0.0.0",
+                                    "ipList": "0.0.0.0",
+                                    "ips6": [],
+                                    "mac": "28:6e:d4:8a:29:85",
+                                    "sequenceNum": 0
+                                }
+                            ],
+                            "numaNodes": 0,
+                            "properties": {
+                                "dpiVmType": "",
+                                "secureVmType": ""
+                            },
+                            "vtpm": {}
+                        },
+                        "vmType": 0
+                    }
+                ]
+            }
+        }
+    }
+}
+
+TASK [TASK 8.3 - Extract VM template ID] *****************************************************************************************************************************************
+ok: [localhost]
+
+TASK [TASK 8.4 - Print VM template ID] *******************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": "i-00000500"
+}
+
+TASK [TASK 9.1 - Generic Module - Create VM from Template] ***********************************************************************************************************************
+changed: [localhost]
+
+TASK [TASK 9.2 - Track and Wait for FusionCompute Tasks] *************************************************************************************************************************
+included: /root/Desktop/ansible/ansible/wait_fc_system_task.yml for localhost
+
+TASK [Extract Task ID] ***********************************************************************************************************************************************************
+ok: [localhost]
+
+TASK [Print Task ID] *************************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": "1778090"
+}
+
+TASK [Wait Until Primary Task Completed] *****************************************************************************************************************************************
+changed: [localhost]
+
+TASK [Save Unique Primary Task Output Fact] **************************************************************************************************************************************
+ok: [localhost]
+
+TASK [Print Primary Task Output] *************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": true,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "cancelable": false,
+                "cancelled": false,
+                "costTime": "43",
+                "entityName": "api-demo-002",
+                "entityUrn": "urn:sites:098A109B:vms:i-00000510",
+                "finishTime": "2026-07-07 18:39:40",
+                "isRetry": false,
+                "isRollback": false,
+                "localFinishTime": 1783420780000,
+                "localStartTime": 1783420736000,
+                "progress": 100,
+                "relateTaskIds": [
+                    "urn:sites:098A109B:tasks:1778092"
+                ],
+                "requestId": "ecd7b0de-b5aa-4645-b3c3-360cba44d0be",
+                "startTime": "2026-07-07 18:38:56",
+                "status": "success",
+                "taskFrom": 1,
+                "taskType": "DeployVM",
+                "type": "DeployVM",
+                "uri": "/service/sites/098A109B/tasks/1778090",
+                "urn": "urn:sites:098A109B:tasks:1778090",
+                "user": "api_user"
+            }
+        }
+    }
+}
+
+TASK [Extract Entity URN] ********************************************************************************************************************************************************
+ok: [localhost]
+
+TASK [Print Entity URN] **********************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": "urn:sites:098A109B:vms:i-00000510"
+}
+
+TASK [Get System Scheduling Task ID] *********************************************************************************************************************************************
+ok: [localhost]
+
+TASK [Save Unique Pagination Output Fact] ****************************************************************************************************************************************
+ok: [localhost]
+
+TASK [Print Pagination Output] ***************************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": false,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "tasks": [
+                    {
+                        "cancelable": true,
+                        "cancelled": false,
+                        "costTime": "null",
+                        "entityName": "api-demo-002",
+                        "entityUrn": "urn:sites:098A109B:vms:i-00000510",
+                        "isRetry": false,
+                        "isRollback": false,
+                        "localFinishTime": 0,
+                        "localStartTime": 1783420780000,
+                        "progress": 11,
+                        "relateTaskIds": [],
+                        "requestId": "ecd7b0de-b5aa-4645-b3c3-360cba44d0be",
+                        "startTime": "2026-07-07 18:39:40",
+                        "status": "running",
+                        "taskFrom": 1,
+                        "taskId": "1778096",
+                        "type": "InjectCustomizationTask",
+                        "uri": "/service/sites/098A109B/tasks/1778096",
+                        "urn": "urn:sites:098A109B:tasks:1778096",
+                        "user": "-_system"
+                    },
+                    {
+                        "cancelable": true,
+                        "cancelled": false,
+                        "costTime": "null",
+                        "entityName": "Ubunto-apache2-DR",
+                        "entityUrn": "urn:sites:098A109B:vms:i-000004FA",
+                        "isRetry": false,
+                        "isRollback": false,
+                        "localFinishTime": 0,
+                        "localStartTime": 1783420479000,
+                        "progress": 31,
+                        "relateTaskIds": [],
+                        "requestId": "70e1eb0e-52e7-41dd-9c0a-01ecf4a23fa9",
+                        "startTime": "2026-07-07 18:34:39",
+                        "status": "running",
+                        "taskFrom": 1,
+                        "taskId": "1778074",
+                        "type": "MigrateVolorVmTask",
+                        "uri": "/service/sites/098A109B/tasks/1778074",
+                        "urn": "urn:sites:098A109B:tasks:1778074",
+                        "user": "admin"
+                    },
+                    {
+                        "cancelable": false,
+                        "cancelled": false,
+                        "costTime": "null",
+                        "entityName": "Jumper-z00925541",
+                        "entityUrn": "urn:sites:098A109B:vms:i-00000036",
+                        "isRetry": false,
+                        "isRollback": false,
+                        "localFinishTime": 0,
+                        "localStartTime": 1782727566000,
+                        "progress": 99,
+                        "relateTaskIds": [],
+                        "requestId": "3745403a-0ae2-4ca5-916d-0afbed2f6d99",
+                        "startTime": "2026-06-29 18:06:06",
+                        "status": "running",
+                        "taskFrom": 1,
+                        "taskId": "1712868",
+                        "type": "SnapshotResumeVmTask",
+                        "uri": "/service/sites/098A109B/tasks/1712868",
+                        "urn": "urn:sites:098A109B:tasks:1712868",
+                        "user": "admin"
+                    }
+                ],
+                "total": 3
+            }
+        }
+    }
+}
+
+TASK [Extract System Scheduling Task ID] *****************************************************************************************************************************************
+ok: [localhost]
+
+TASK [Print System Scheduling Task ID] *******************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": "1778096"
+}
+
+TASK [Wait Until System Scheduling Task Completed] *******************************************************************************************************************************
+changed: [localhost]
+
+TASK [Save Unique System Scheduling Task Output Fact] ****************************************************************************************************************************
+ok: [localhost]
+
+TASK [Print System Scheduling Task Output] ***************************************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": true,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "cancelable": false,
+                "cancelled": false,
+                "costTime": "49",
+                "entityName": "api-demo-002",
+                "entityUrn": "urn:sites:098A109B:vms:i-00000510",
+                "finishTime": "2026-07-07 18:40:29",
+                "isRetry": false,
+                "isRollback": false,
+                "localFinishTime": 1783420829000,
+                "localStartTime": 1783420780000,
+                "progress": 100,
+                "relateTaskIds": [],
+                "requestId": "ecd7b0de-b5aa-4645-b3c3-360cba44d0be",
+                "startTime": "2026-07-07 18:39:40",
+                "status": "success",
+                "taskFrom": 1,
+                "taskType": "InjectCustomizationTask",
+                "type": "InjectCustomizationTask",
+                "uri": "/service/sites/098A109B/tasks/1778096",
+                "urn": "urn:sites:098A109B:tasks:1778096",
+                "user": "-_system"
+            }
+        }
+    }
+}
+
+TASK [TASK 9.3 - Access the returned task completion info] ***********************************************************************************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": true,
+        "failed": false,
+        "ret": {
+            "code": 200,
+            "rsp": {
+                "cancelable": false,
+                "cancelled": false,
+                "costTime": "49",
+                "entityName": "api-demo-002",
+                "entityUrn": "urn:sites:098A109B:vms:i-00000510",
+                "finishTime": "2026-07-07 18:40:29",
+                "isRetry": false,
+                "isRollback": false,
+                "localFinishTime": 1783420829000,
+                "localStartTime": 1783420780000,
+                "progress": 100,
+                "relateTaskIds": [],
+                "requestId": "ecd7b0de-b5aa-4645-b3c3-360cba44d0be",
+                "startTime": "2026-07-07 18:39:40",
+                "status": "success",
+                "taskFrom": 1,
+                "taskType": "InjectCustomizationTask",
+                "type": "InjectCustomizationTask",
+                "uri": "/service/sites/098A109B/tasks/1778096",
+                "urn": "urn:sites:098A109B:tasks:1778096",
+                "user": "-_system"
+            }
+        }
+    }
+}
+
+PLAY RECAP ***********************************************************************************************************************************************************************
+localhost                  : ok=57   changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0  

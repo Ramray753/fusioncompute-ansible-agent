@@ -1,2 +1,4 @@
 workspace:
   output_dir: "./output_ansible"
+  protected_files:
+    - "wait_fc_system_task.yml"

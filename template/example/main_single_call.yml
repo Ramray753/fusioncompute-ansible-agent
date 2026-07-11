@@ -1,0 +1,455 @@
+- name: FusionCompute Ansible Example For Agent - Best Practice for Single API Calls
+  hosts: localhost
+  vars_files:
+    # Global environment configuration file.
+    # Contains infrastructure-level connection parameters such as fc_hostname, fc_username, and fc_password.
+    - ./commons.yml
+
+  vars:
+    user_config:
+      # Please put all user-defined variables here. For exmaple: resource names, resource threshold, etc.
+      # ALternatively, for a batch of resources to operate, it is recommended to load the resource list from a csv file (not shown in this playbook example).
+      task_2_vm_name: 'api-demo-001'
+      task_3_cluster_name: 'ManagementCluster'
+      task_4_host_name: 'CNA1'
+      task_5_datastore_name: 'eVol-15'
+      task_6_dvs_name: 'ManagementDVS'
+      task_7_portgroup_name: 'managePortgroup'
+      task_8_vm_template_name: 'CentOS Stream 9'
+      task_9_vm_name: "api-demo-002"
+      task_9_ip: '192.168.123.123'
+      task_9_netmask: '255.255.255.0'
+      task_9_gateway: '192.168.123.1'
+      task_9_password: 'P@ssw0rd' 
+
+  tasks:  
+  # =========================================================================
+  # EXAMPLE 1 - Login Test (TASK 1)
+  # =========================================================================
+  # TASK 1: The fc_token_manager module manages session tokens with the FusionCompute API.
+  # IMPORTANT: This module is explicitly used here to verify network connectivity and credentials. 
+  # The other modules automatically handle session authentication internally using global credentials.
+  # Calling the fc_token_manager module is generally unnecessary unless the SiteID is required to obtain.
+  - name: TASK 1.1 - Inherit Module - Login Test
+    huawei.fusioncompute.fc_token_manager:
+      fc_hostname: '{{ fc_hostname }}' 
+      fc_username: '{{ fc_username }}'
+      fc_password: '{{ fc_password }}'
+      action: 'login'
+    register: output_task_1
+
+  - name: TASK 1.2 - Print Output
+    debug:
+      msg: '{{ output_task_1 }}'
+
+  - name: Task 1.3 - Extract Site ID
+    set_fact:
+      site_id: "{{ output_task_1.ret.fc_site_id }}"
+
+  - name: TASK 1.4 - Print Site ID
+    debug:
+      msg: '{{ site_id }}'
+
+  # =========================================================================
+  # EXAMPLE 2 - Generic API Call - GET (TASK 2-8)
+  # =========================================================================
+  # The fc_generic module interacts directly with the underlying REST API endpoints.
+  # The fc_generic module requires explicit HTTP verbs (fc_method) and raw URIs (fc_url). For GET request, request body (fc_body) is not requried.
+  # IMPORTANT: Please refer to the REST API documentation to obtain the most accurate request URLs and URL parameter names; making them up arbitrarily is prohibited.
+
+  # The typical playbook logic is as follows:
+  # 1. Perform a fuzzy search on the resource list using the resource name (e.g., virtual machines, datastores, hosts, etc.) to retrieve its URN or ID (the ID is always the last segment of the URN).
+  # IMPORTANT: Always check the name of all matching assets in the returned array when extract the ID after a fuzzy search (i.e., search by name).
+  # 2. Use the resource URN or ID to retrieve more detailed resource information.
+  # 3. Alternatively, use the resource URN or ID to execute Create, Modify, or Delete operations.
+
+  # TASK 2: Get the ID of the first VM found by matching the VM name, then use that ID to query the VM's detailed information.
+  - name: TASK 2.1 - Generic Module - Get VM ID by Name
+    huawei.fusioncompute.fc_generic:
+      fc_hostname: '{{ fc_hostname }}'
+      fc_username: '{{ fc_username }}'
+      fc_password: '{{ fc_password }}'
+      fc_method: '{{ fc_method }}'
+      fc_url: '{{ fc_url }}'
+    vars:
+      fc_method: 'get'
+      fc_url: '/vms?name={{ user_config.task_2_vm_name }}' # Corresponding API: <查询虚拟机信息-过滤分页查询所有虚拟机信息>
+    register: output_task_2_1
+
+  - name: TASK 2.2 - Print Output
+    debug:
+      msg: '{{ output_task_2_1 }}'
+    
+  # Extracts the ID from the returned JSON structure.
+  # The expression parses the first object in the 'vms' array, splits the URN string by colons, and extracts the final segment which represents the direct VM ID.
+  - name: Task 2.3 - Extract VM ID
+    set_fact:
+      vm_id: "{{ (output_task_2_1.ret.rsp.vms | selectattr('name', 'equalto', user_config.task_2_vm_name) | list | first).urn.split(':') | last }}"
+    when:
+      - output_task_2_1.ret.rsp.vms is defined
+      - output_task_2_1.ret.rsp.vms | length > 0
+      - (output_task_2_1.ret.rsp.vms | selectattr('name', 'equalto', user_config.task_2_vm_name) | list | length) > 0
+
+  - name: TASK 2.4 - Print VM ID
+    debug:
+      msg: '{{ vm_id }}'
+
+  # Executes a GET request to retrive detailed VM information using the VM ID.
+  - name: TASK 2.5 - Generic Module - Get VM Details by ID
+    huawei.fusioncompute.fc_generic:
+      fc_hostname: '{{ fc_hostname }}'
+      fc_username: '{{ fc_username }}'
+      fc_password: '{{ fc_password }}'
+      fc_method: '{{ fc_method }}'
+      fc_url: '{{ fc_url }}'
+    vars:
+      fc_method: 'get'
+      fc_url: '/vms/{{ vm_id }}' # Corresponding API: <查询虚拟机信息-查询指定虚拟机信息>
+    register: output_task_2_2
+
+  - name: TASK 2.6 - Print Output
+    debug:
+      msg: '{{ output_task_2_2 }}'
+
+  # Subsequently, the relevant information can be obtained from the VM details and utilized for downstream business operations (e.g., retrieving the Disk ID).
+  - name: TASK 2.7 - Extract the First Disk ID
+    set_fact:
+      volume_id: "{{ (output_task_2_2.ret.rsp.vmConfig.disks | first).volumeUrn.split(':') | last }}"
+
+  - name: TASK 2.8 - Print Output
+    debug:
+      msg: '{{ volume_id }}'
+
+  # Executes a GET request to retrive detailed disk information using the disk ID.
+  - name: TASK 2.9 - Generic Module - Get Disk Details by ID
+    huawei.fusioncompute.fc_generic:
+      fc_hostname: '{{ fc_hostname }}'
+      fc_username: '{{ fc_username }}'
+      fc_password: '{{ fc_password }}'
+      fc_method: '{{ fc_method }}'
+      fc_url: '/volumes/{{ volume_id }}' # Corresponding API: <查询指定卷>
+    register: output_task_2_3
+
+  - name: TASK 2.10 - Print Output
+    debug:
+      msg: '{{ output_task_2_3 }}'
+  
+  # TASK 3: Get the ID of the first cluster found by matching the cluster name.
+  - name: TASK 3.1 - Generic Module - Get Cluster ID by Name
+    huawei.fusioncompute.fc_generic:
+      fc_hostname: '{{ fc_hostname }}'
+      fc_username: '{{ fc_username }}'
+      fc_password: '{{ fc_password }}'
+      fc_method: '{{ fc_method }}'
+      fc_url: '{{ fc_url }}'
+    vars:
+      fc_method: 'get'
+      fc_url: '/clusters?name={{ user_config.task_3_cluster_name }}' # Corresponding API: <过滤查询所有Cluster >
+    register: output_task_3
+
+  - name: TASK 3.2 - Print Output
+    debug:
+      msg: '{{ output_task_3 }}'
+
+  - name: Task 3.3 - Extract Cluster ID
+    set_fact:
+      cluster_id: "{{ (output_task_3.ret.rsp.clusters | selectattr('name', 'equalto', user_config.task_3_cluster_name) | list | first).urn.split(':') | last }}"
+    when:
+      - output_task_3.ret.rsp.clusters is defined
+      - output_task_3.ret.rsp.clusters | length > 0
+      - (output_task_3.ret.rsp.clusters | selectattr('name', 'equalto', user_config.task_3_cluster_name) | list | length) > 0
+
+  - name: TASK 3.4 - Print Cluster ID
+    debug:
+      msg: '{{ cluster_id }}'
+
+  # TASK 4: Get the ID of the first host found by matching the host name.
+  - name: TASK 4.1 - Generic Module - Get Host ID by Name
+    huawei.fusioncompute.fc_generic:
+      fc_hostname: '{{ fc_hostname }}'
+      fc_username: '{{ fc_username }}'
+      fc_password: '{{ fc_password }}'
+      fc_method: '{{ fc_method }}'
+      fc_url: '{{ fc_url }}'
+    vars:
+      fc_method: 'get'
+      fc_url: '/hosts?name={{ user_config.task_4_host_name }}' # Corresponding API: <查询主机列表>
+    register: output_task_4
+
+  - name: TASK 4.2 - Print Output
+    debug:
+      msg: '{{ output_task_4 }}'
+
+  - name: Task 4.3 - Extract Host ID
+    set_fact:
+      host_id: "{{ (output_task_4.ret.rsp.hosts | selectattr('name', 'equalto', user_config.task_4_host_name) | list | first).urn.split(':') | last }}"
+    when:
+      - output_task_4.ret.rsp.hosts is defined
+      - output_task_4.ret.rsp.hosts | length > 0
+      - (output_task_4.ret.rsp.hosts | selectattr('name', 'equalto', user_config.task_4_host_name) | list | length) > 0
+
+  - name: TASK 4.4 - Print Host ID
+    debug:
+      msg: '{{ host_id }}'
+
+  # TASK 5: Get the ID of the first datastore found by matching the datastore name.
+  - name: TASK 5.1 - Generic Module - Get Datastore ID by Name
+    huawei.fusioncompute.fc_generic:
+      fc_hostname: '{{ fc_hostname }}'
+      fc_username: '{{ fc_username }}'
+      fc_password: '{{ fc_password }}'
+      fc_method: '{{ fc_method }}'
+      fc_url: '{{ fc_url }}'
+    vars:
+      fc_method: 'get'
+      fc_url: '/datastores?name={{ user_config.task_5_datastore_name }}' # Corresponding API: <分页查询站点/主机/集群下所有数据存储>
+    register: output_task_5
+
+  - name: TASK 5.2 - Print Output
+    debug:
+      msg: '{{ output_task_5 }}'
+
+  - name: TASK 5.3 - Extract Datastore ID
+    set_fact:
+      datastore_id: "{{ (output_task_5.ret.rsp.datastores | selectattr('name', 'equalto', user_config.task_5_datastore_name) | list | first).urn.split(':') | last }}"
+    when:
+      - output_task_5.ret.rsp.datastores is defined
+      - output_task_5.ret.rsp.datastores | length > 0
+      - (output_task_5.ret.rsp.datastores | selectattr('name', 'equalto', user_config.task_5_datastore_name) | list | length) > 0
+
+  - name: TASK 5.4 - Print Datastore ID
+    debug:
+      msg: '{{ datastore_id }}'
+
+  # TASK 6: Get the ID of the first DVS (Distributed Virtual Switch) found by matching the DVS name.
+  - name: TASK 6.1 - Generic Module - Get DVS ID by Name
+    huawei.fusioncompute.fc_generic:
+      fc_hostname: '{{ fc_hostname }}'
+      fc_username: '{{ fc_username }}'
+      fc_password: '{{ fc_password }}'
+      fc_method: '{{ fc_method }}'
+      fc_url: '{{ fc_url }}'
+    vars:
+      fc_method: 'get'
+      fc_url: '/dvswitchs?name={{ user_config.task_6_dvs_name }}' # Corresponding API: <查询所有的分布式交换机DVS信息>
+    register: output_task_6
+
+  - name: TASK 6.2 - Print Output
+    debug:
+      msg: '{{ output_task_6 }}'
+
+  - name: TASK 6.3 - Extract DVS ID
+    set_fact:
+      dvs_id: "{{ (output_task_6.ret.rsp.dvSwitchs | selectattr('name', 'equalto', user_config.task_6_dvs_name) | list | first).urn.split(':') | last }}"
+    when:
+      - output_task_6.ret.rsp.dvSwitchs is defined
+      - output_task_6.ret.rsp.dvSwitchs | length > 0
+      - (output_task_6.ret.rsp.dvSwitchs | selectattr('name', 'equalto', user_config.task_6_dvs_name) | list | length) > 0
+
+  - name: TASK 6.4 - Print DVS ID
+    debug:
+      msg: '{{ dvs_id }}'
+
+  # TASK 7: Get the ID of the first Port Group found by matching the PortGroup name.
+  - name: TASK 7.1 - Generic Module - Get PortGroup ID by Name
+    huawei.fusioncompute.fc_generic:
+      fc_hostname: '{{ fc_hostname }}'
+      fc_username: '{{ fc_username }}'
+      fc_password: '{{ fc_password }}'
+      fc_method: '{{ fc_method }}'
+      fc_url: '{{ fc_url }}'
+    vars:
+      fc_method: 'get'
+      fc_url: '/dvswitchs/{{ dvs_id }}/portgroups?portGroupName={{ user_config.task_7_portgroup_name }}' # Corresponding API: <分页查询分布式交换机DVS下所有的端口组PortGroup>
+    register: output_task_7
+
+  - name: TASK 7.2 - Print Output
+    debug:
+      msg: '{{ output_task_7 }}'
+
+  - name: TASK 7.3 - Extract Port Group ID
+    set_fact:
+      portgroup_id: "{{ (output_task_7.ret.rsp.portGroups | selectattr('portGroupName', 'equalto', user_config.task_7_portgroup_name) | list | first).urn.split(':') | last }}"
+    when:
+      - output_task_7.ret.rsp.portGroups is defined
+      - output_task_7.ret.rsp.portGroups | length > 0
+      - (output_task_7.ret.rsp.portGroups | selectattr('portGroupName', 'equalto', user_config.task_7_portgroup_name) | list | length) > 0
+
+  - name: TASK 7.4 - Print Port Group ID
+    debug:
+      msg: '{{ portgroup_id }}'
+
+  # TASK 8: Get the ID of the first VM template found by matching the VM template name.
+  - name: TASK 8.1 - Generic Module - Get VM template ID by Name
+    huawei.fusioncompute.fc_generic:
+      fc_hostname: '{{ fc_hostname }}'
+      fc_username: '{{ fc_username }}'
+      fc_password: '{{ fc_password }}'
+      fc_method: '{{ fc_method }}'
+      fc_url: '{{ fc_url }}'
+    vars:
+      fc_method: 'get'
+      fc_url: '/vms?name={{ user_config.task_8_vm_template_name }}' # Corresponding API: <查询虚拟机信息-过滤分页查询所有虚拟机信息>
+    register: output_task_8
+
+  - name: TASK 8.2 - Print Output
+    debug:
+      msg: '{{ output_task_8 }}'
+
+  - name: TASK 8.3 - Extract VM template ID
+    set_fact:
+      vm_template_id: "{{ (output_task_8.ret.rsp.vms | selectattr('name', 'equalto', user_config.task_8_vm_template_name) | list | first).urn.split(':') | last }}"
+    when:
+      - output_task_8.ret.rsp.vms is defined
+      - output_task_8.ret.rsp.vms | length > 0
+      - (output_task_8.ret.rsp.vms | selectattr('name', 'equalto', user_config.task_8_vm_template_name) | list | length) > 0
+
+  - name: TASK 8.4 - Print VM template ID
+    debug:
+      msg: '{{ vm_template_id }}'
+
+  # =========================================================================
+  # EXAMPLE 3 - Generic API Call - POST/PUT (TASK 9)
+  # =========================================================================
+  # The fc_generic module interacts directly with the underlying REST API endpoints.
+  # The fc_generic module requires explicit HTTP verbs (fc_method) and raw URIs (fc_url). For POST or PUT request, request body (fc_body) is requried.
+  # The fc_body parameter contains the structural payload required by the FusionCompute REST API.
+  # IMPORTANT: ease refer to the REST API documentation to obtain the most accurate request URLs, URL parameter names, and request body data formats; making them up arbitrarily is prohibited.
+
+  # TASK 9: Performs a HTTP POST request to clone a new VM instance from a VM template. All essential parameters (i.e. resource IDs) are obtained from TASK 1-8.
+  - name: TASK 9.1 - Generic Module - Create VM from Template
+    huawei.fusioncompute.fc_generic:
+      fc_hostname: '{{ fc_hostname }}' 
+      fc_username: '{{ fc_username }}'
+      fc_password: '{{ fc_password }}'
+      fc_method: 'post'
+      fc_url: '/vms/{{ vm_template_id }}/action/clone' # Corresponding API: <将虚拟机/模板为虚拟机/模板或模板部署虚拟机/链接克隆虚拟机>
+      fc_body: 
+        name: '{{ user_config.task_9_vm_name }}'
+        description: ""
+        location: 'urn:sites:{{ site_id }}:clusters:{{ cluster_id }}'
+        parentObjUrn: 'urn:sites:{{ site_id }}'
+        isBindingHost: false
+        osOptions:
+          osType: Linux
+          osVersion: 10115
+          guestOSName: 'CentOS Stream 9.x 64bit'
+          password: ""
+        vmConfig:
+          cpu:
+            cpuHotPlug: 1
+            cpuPolicy: shared
+            cpuThreadPolicy: prefer
+            weight: 1000
+            quantity: 2
+            limit: 0
+            reservation: 0
+            coresPerSocket: 1
+          memory:
+            quantityMB: 4096
+            hugePage: "4K"
+            limit: 0
+            reservation: 0
+            weight: 40960
+            memHotPlug: 1
+          disks:
+            - datastoreUrn: 'urn:sites:{{ site_id }}:datastores:{{ datastore_id }}'
+              quantityGB: 200
+              sequenceNum: 1
+              type: normal
+              indepDisk: false
+              persistentDisk: true
+              isThin: true
+              volType: 0
+              pciType: VIRTIO
+              bootOrder: 1
+              encrypted: "0"
+              encryptedType: "0" 
+              kek: null
+              storageProtocol: "0"
+              ioMode: dataplane
+          nics:
+            - enableSecurityGroup: false
+              portGroupUrn: 'urn:sites:{{ site_id }}:dvswitchs:{{ dvs_id }}:portgroups:{{ portgroup_id }}'
+              sequenceNum: 0
+              virtIo: 1
+              bootOrder: 2
+              connectAtPowerOn: true
+              linkStatus: disconnected
+              nicConfig:
+                vringbuf: 256
+                queues: 1
+                pollUs: 0   
+          graphicsCard:
+            type: cirrus
+            size: 4
+          properties:
+            antivirusMode: ""
+            isAutoAdjustNuma: false
+            bootFirmware: BIOS
+            bootFirmwareTime: 0
+            bootOption: disk
+            clockMode: synchClock
+            vmVncKeymapSetting: 7
+            isHpet: false
+            evsAffinity: false
+            secureVmType: ""
+            realtime: false
+            isEnableMemVol: false
+            isEnableFt: false
+            isAutoUpgrade: true
+            emulatorResType: null
+            dpiVmType: ""
+            cdRomBootOrder: -1
+            attachType: false
+            enableWatchDog: false
+            isSecureBoot: false
+            migrateSetting: passThrough
+            cpuBaseline: ""       
+            useLatestQemuVersion: 0    
+            enableKae: false
+            reoverByHost: false  
+            enableSpice: false
+          gpuGroups: []
+        cpuVendor: Intel  
+        autoBoot: true
+        floppyFile: ""
+        floppyProtocol: unMount
+        vmCustomization:
+          osType: Linux
+          updatePassword: true
+          vmcustomizationId: null
+          nicSpecification:
+            - ipVersion: 4
+              sequenceNum: 1
+              ip: '{{ user_config.task_9_ip }}'
+              netmask: '{{ user_config.task_9_netmask }}'
+              gateway: '{{ user_config.task_9_gateway }}'
+              setdns: null
+              adddns: null
+          hostname: '{{ user_config.task_9_vm_name }}'
+          password: '{{ user_config.task_9_password }}' 
+          isUpdateVmSid: false
+        isSrcTemplate: true
+        isEnableIntegrity: false
+        vmCloneUpperSpeed: 12500  
+        isTemplateToVM: true   
+    register: output_task_9_1
+
+  # Asynchronous task polling block to track the progressive state of the VM provisioning operation.
+  # wait_fc_system_task.yml wraps the wait_fc_system_task module and is designed to wait for any type of task to complete. 
+  # IMPORTANT: For any POST or PUT operation that returns a Task ID, you must strictly follow the invocation pattern of Task 9.2 to call wait_fc_system_task.yml instead of directly using the wait_fc_system_task module.
+  - name: TASK 9.2 - Track and Wait for FusionCompute Tasks
+    include_tasks: wait_fc_system_task.yml
+    vars:
+      async_output: "{{ output_task_9_1 }}"
+      task_id_suffix: "task_9_1"
+
+  # OPTIONAL: Certain operations populate detailed execution results directly into the response body of the task query API (e.g., the "Upload and Run Custom Script on VM" task). 
+  # If subsequent tasks require the detailed response payload from a preceding task query, it can be retrieved via the '_sys_query_output_${task_id_suffix}' variable (replace ${task_id_suffix} to the real task id suffix).
+  # In most POST/PUT scenarios, you do NOT need to retrive the task query response in main.yml.
+  - name: TASK 9.3 - Access the returned task completion info
+    debug:
+      msg: "{{ _sys_query_output_task_9_1 }}"
+    # Use default() to avoid errors if the task condition in wait_fc_system_task.yml was not met
+    when: _sys_query_output_task_9_1 is defined

@@ -1,0 +1,45 @@
+- name: FusionCompute Ansible Example For Agent - Best Practice for Batch API Calls in Parallel
+  hosts: localhost
+  vars_files:
+    - ./commons.yml
+
+  vars:
+    user_config:
+      task_11_vm_names_csv: './vm_names_start.csv'
+
+  tasks:  
+  # =========================================================================
+  # EXAMPLE 4 - Batch Operations in Parallel (TASK 11)
+  # =========================================================================
+  # Batch Operation Strategies for Parallel Execution: 
+  # 1. Concurrency level is defined via the 'fc_concurrency' variable in commons.yml. 
+  # 2. Use 'lookup' in main.yml to get the resource list from a CSV file and use 'add_host' to populate a dynamic inventory group.
+  # 2. Move the execution logic to a separate YAML file.
+  # 3. Invoke this file it in a new Play in main.yml using 'hosts', 'serial', and 'include_tasks'.
+
+  # TASK 11: Parallelly perform batch VM start given a VM name list using built-in tools.
+  - name: TASK 11.1 - Read file lines using built-in file lookup
+    set_fact:
+      vm_list: "{{ lookup('ansible.builtin.file', user_config.task_11_vm_names_csv).splitlines()[:] }}"
+
+  - name: TASK 11.2 - Dynamically add VMs to a temporary inventory group
+    ansible.builtin.add_host:
+      name: "{{ item | trim }}"
+      groups: dynamic_vms
+    loop: "{{ vm_list }}"
+    when: item | trim | length > 0
+
+# Invoke this file it in a new Play 
+- name: TASK 11.3 - Execute Batch VM Start Concurrently
+  hosts: dynamic_vms
+  gather_facts: no
+  connection: local
+  # Read the concurrency parameter from localhost's hostvars
+  serial: "{{ hostvars['localhost'].fc_concurrency | default(10)}}"
+  vars_files:
+  - ./commons.yml
+  tasks:
+    - name: Include VM stop sequence for the current batch
+      ansible.builtin.include_tasks: start_single_vm.yml
+      vars:
+        vm_name_item: "{{ inventory_hostname }}"

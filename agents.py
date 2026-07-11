@@ -1,4 +1,5 @@
 import os
+import sys
 import yaml
 import asyncio
 from dotenv import load_dotenv
@@ -6,9 +7,15 @@ from crewai import Agent, LLM
 from crewai.tools import tool
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from mcp_wrapper.mcp_prompts import _dict_to_xml
 
 # Establish absolute project root directory anchor (current folder for root agents.py)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Ensure the project root is in sys.path to resolve internal modules securely
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
 
 # ==============================================================================
 # ENVIRONMENT BOOTSTRAPPING & MODEL ROUTING
@@ -60,6 +67,14 @@ def _load_agent_prompt_config() -> dict:
         except Exception as error:
             raise ValueError(f"[PARSING ERROR] Failed to load structural yaml context from {config_file}. Details: {str(error)}")
 
+def build_xml_backstory(agent_config: dict) -> str:
+    """
+    Extracts granular configuration keys (excluding role and goal) and 
+    renders them dynamically into an XML-formatted backstory string.
+    """
+    dynamic_keys = {k: v for k, v in agent_config.items() if k not in ["role", "goal"]}
+    return _dict_to_xml(dynamic_keys, indent_level=1)
+
 # Instantiate the decoupled model processing components securely using native LLM types
 analyst_llm = bootstrap_runtime_llm("ANALYST_MODEL", "ANALYST_BASE_URL")
 coding_llm = bootstrap_runtime_llm("CODING_MODEL", "CODING_BASE_URL")
@@ -70,10 +85,9 @@ agent_prompts = _load_agent_prompt_config()
 # ==============================================================================
 # MCP CLIENT INTEGRATION LAYER (Replaces direct tools_ansible hardcoding)
 # ==============================================================================
-# 🎯 PATH TUNNEL ANCHOR: Route the Stdio client parameter pipeline securely into the new 'mcp/' folder
 SERVER_PARAMS = StdioServerParameters(
     command="python",
-    args=[os.path.join(BASE_DIR, "mcp", "mcp_server.py")]
+    args=[os.path.join(BASE_DIR, "mcp_wrapper", "mcp_server.py")]
 )
 
 async def _call_mcp_resource(uri: str) -> str:
@@ -104,21 +118,20 @@ async def _call_mcp_tool(name: str, arguments: dict) -> str:
 def designer_read_mcp_resource(uri: str) -> str:
     """
     Read-only context acquisition tool restricted strictly to the [Automation Architect].
-    Supported URIs for the Designer:
-    - fc://api/headings (To discover system capabilities and plan workflows)
-    - fc://ansible/spec (To examine specific module syntax constraints)
-    - fc://ansible/exmaple/single (To analyze standard single operation playbook layouts)
-    - fc://ansible/exmaple/sequential (To analyze sequential file-looping patterns)
-    - fc://ansible/exmaple/parallel (To analyze concurrent parallel processing patterns)
-    - fc://api/content/{keyword} (Replace {keyword} with exact Chinese section name to find parameters metadata)
+    Input 'uri' must exactly match one of the following strings:
+    - 'fc://api/headings' : To discover system capabilities and plan workflows.
+    - 'fc://ansible/spec' : To examine specific module syntax constraints.
+    - 'fc://ansible/example/single' : To analyze single operation layouts and logs.
+    - 'fc://ansible/example/sequential' : To analyze sequential batch looping patterns and logs.
+    - 'fc://ansible/example/parallel' : To analyze concurrent parallel processing patterns and logs.
+    - 'fc://api/content/{keyword}' : Replace {keyword} with the exact literal Chinese section name (e.g., 'fc://api/content/查询指定主机') to fetch precise parameter schemas.
     """
-    # Hard Whitelist Verification for the Blueprint Designer Role
     allowed_static_uris = [
         "fc://api/headings",
         "fc://ansible/spec",
-        "fc://ansible/exmaple/single",
-        "fc://ansible/exmaple/sequential",
-        "fc://ansible/exmaple/parallel"
+        "fc://ansible/example/single",
+        "fc://ansible/example/sequential",
+        "fc://ansible/example/parallel"
     ]
     if uri not in allowed_static_uris and not uri.startswith("fc://api/content/"):
         return f"[SECURITY ACCESS DENIED] The Automation Architect is unauthorized to pull context from URI: '{uri}'"
@@ -132,21 +145,20 @@ def designer_read_mcp_resource(uri: str) -> str:
 def engineer_read_mcp_resource(uri: str) -> str:
     """
     Read-only context acquisition tool restricted strictly to the [Code Engineer].
-    Supported URIs for the Code Engineer:
-    - fc://ansible/spec (To examine specific module syntax constraints)
-    - fc://api/spec (To parse global API baseline standards and URL formats)
-    - fc://ansible/exmaple/single (To align structure with standard layouts and wrappers)
-    - fc://ansible/exmaple/sequential (To map ordered batch file matrices correctly)
-    - fc://ansible/exmaple/parallel (To map high-concurrency loops accurately)
-    - fc://api/content/{keyword} (Replace {keyword} with exact Chinese section name to retrieve full parameters payload schemas)
+    Input 'uri' must exactly match one of the following strings:
+    - 'fc://ansible/spec' : To examine specific module syntax constraints.
+    - 'fc://api/spec' : To parse global API baseline standards and URL formats.
+    - 'fc://ansible/example/single' : To retrieve single operation layouts and execution logs.
+    - 'fc://ansible/example/sequential' : To map ordered batch file matrices correctly.
+    - 'fc://ansible/example/parallel' : To map high-concurrency loops accurately.
+    - 'fc://api/content/{keyword}' : Replace {keyword} with the exact literal Chinese section name (e.g., 'fc://api/content/查询指定主机') to retrieve full parameter payload schemas.
     """
-    # Hard Whitelist Verification for the Code Engineer Role
     allowed_static_uris = [
         "fc://ansible/spec",
         "fc://api/spec",
-        "fc://ansible/exmaple/single",
-        "fc://ansible/exmaple/sequential",
-        "fc://ansible/exmaple/parallel"
+        "fc://ansible/example/single",
+        "fc://ansible/example/sequential",
+        "fc://ansible/example/parallel"
     ]
     if uri not in allowed_static_uris and not uri.startswith("fc://api/content/"):
         return f"[SECURITY ACCESS DENIED] The Code Engineer is unauthorized to pull context from URI: '{uri}'"
@@ -160,12 +172,11 @@ def engineer_read_mcp_resource(uri: str) -> str:
 def reviewer_read_mcp_resource(uri: str) -> str:
     """
     Read-only context acquisition tool restricted strictly to the [Code Reviewer].
-    Supported URIs for the Code Reviewer:
-    - fc://ansible/spec (To verify if generated blocks match framework standards)
-    - fc://api/spec (To audit relative paths cleanliness and URL constraints)
-    - fc://api/content/{keyword} (Replace {keyword} with exact Chinese section name to audit parameter completeness)
+    Input 'uri' must exactly match one of the following strings:
+    - 'fc://ansible/spec' : To verify if generated blocks match framework standards.
+    - 'fc://api/spec' : To audit relative paths cleanliness and URL constraints.
+    - 'fc://api/content/{keyword}' : Replace {keyword} with the exact literal Chinese section name to audit parameter completeness.
     """
-    # Hard Whitelist Verification for the Quality Reviewer Role (Strictly blocked from code template blueprints)
     allowed_static_uris = [
         "fc://ansible/spec",
         "fc://api/spec"
@@ -182,11 +193,26 @@ def reviewer_read_mcp_resource(uri: str) -> str:
 # MCP ACTION TOOLS (With Physical File-System Side-Effects)
 # ==============================================================================
 
+@tool("initialize_output_dir")
+def initialize_output_dir() -> str:
+    """
+    Creates the target output directory and copies whitelisted system files (e.g., wait_fc_system_task.yml).
+    Execution Constraint: You MUST call this tool exactly once BEFORE making any calls to 'write_modular_ansible_files'.
+    No arguments are required.
+    """
+    try:
+        return asyncio.run(_call_mcp_tool("initialize_output_dir", {}))
+    except Exception as error:
+        return f"[MCP CLIENT ERROR] Failed to initialize directory. Details: {str(error)}"
+
 @tool("write_modular_ansible_files")
 def write_modular_ansible_files(file_matrix: dict) -> str:
     """
-    Physical write operation deploying a compiled dictionary of Ansible files to disk workspace.
-    Accepts a file_matrix mapping relative filenames (e.g., 'main.yml') to code payloads.
+    Physical write operation to deploy generated playbook files to the disk workspace.
+    Argument 'file_matrix' MUST be a flat dictionary where the key is the exact filename 
+    including extension (e.g., 'main.yml', 'commons.yml', 'process.py') and the value is the raw string code content.
+    Example Input Structure: {"main.yml": "---\n- hosts: localhost...", "commons.yml": "var: 123"}
+    Do NOT include protected system files like 'wait_fc_system_task.yml' in the matrix.
     """
     try:
         return asyncio.run(_call_mcp_tool("write_modular_ansible_files", {"file_matrix": file_matrix}))
@@ -196,7 +222,8 @@ def write_modular_ansible_files(file_matrix: dict) -> str:
 @tool("read_workspace_playbook_file")
 def read_workspace_playbook_file(file_name: str) -> str:
     """
-    Physical read operation allowing pulling generated source code from the workspace directory for compliance auditing.
+    Physical read operation allowing pulling generated source code from the workspace for compliance auditing.
+    Argument 'file_name' MUST be the exact filename without any directory paths (e.g., 'main.yml' or 'commons.yml').
     """
     try:
         return asyncio.run(_call_mcp_tool("read_workspace_playbook_file", {"file_name": file_name}))
@@ -207,6 +234,8 @@ def read_workspace_playbook_file(file_name: str) -> str:
 def validate_yaml_jinja_ast(file_name: str) -> str:
     """
     Physical static analysis to validate YAML and Jinja2 AST compliance.
+    Argument 'file_name' MUST be the exact target filename (e.g., 'main.yml').
+    Execution Constraint: You are STRICTLY PROHIBITED from running this tool on 'wait_fc_system_task.yml'.
     """
     try:
         return asyncio.run(_call_mcp_tool("validate_yaml_jinja_ast", {"file_name": file_name}))
@@ -216,7 +245,8 @@ def validate_yaml_jinja_ast(file_name: str) -> str:
 @tool("run_ansible_syntax_check")
 def run_ansible_syntax_check(playbook_name: str) -> str:
     """
-    Native Ansible syntax verification using the local ansible-playbook runtime.
+    Native Ansible syntax verification using the local ansible-playbook CLI runtime.
+    Argument 'playbook_name' MUST be the primary execution entry point file, which is always 'main.yml'.
     """
     try:
         return asyncio.run(_call_mcp_tool("run_ansible_syntax_check", {"playbook_name": playbook_name}))
@@ -230,7 +260,7 @@ p_designer = agent_prompts["ansible_blueprint_designer"]
 ansible_blueprint_designer = Agent(
     role=p_designer["role"],
     goal=p_designer["goal"],
-    backstory=p_designer["backstory"],
+    backstory=build_xml_backstory(p_designer),
     tools=[designer_read_mcp_resource],
     verbose=True,
     allow_delegation=False,
@@ -244,10 +274,12 @@ p_engineer = agent_prompts["ansible_code_engineer"]
 ansible_code_engineer = Agent(
     role=p_engineer["role"],
     goal=p_engineer["goal"],
-    backstory=p_engineer["backstory"],
+    backstory=build_xml_backstory(p_engineer),
     tools=[
         engineer_read_mcp_resource, 
-        write_modular_ansible_files], 
+        initialize_output_dir,
+        write_modular_ansible_files
+    ], 
     verbose=True,
     allow_delegation=False,
     llm=coding_llm
@@ -256,14 +288,11 @@ ansible_code_engineer = Agent(
 # ==============================================================================
 # AGENT 3: AUTOMATION CODE REVIEW & QUALITY ASSURANCE ENGINEER ([Code Reviewer])
 # ==============================================================================
-# ==============================================================================
-# AGENT 3: AUTOMATION CODE REVIEW & QUALITY ASSURANCE ENGINEER ([Code Reviewer])
-# ==============================================================================
 p_reviewer = agent_prompts["ansible_code_reviewer"]
 ansible_code_reviewer = Agent(
     role=p_reviewer["role"],
     goal=p_reviewer["goal"],
-    backstory=p_reviewer["backstory"],
+    backstory=build_xml_backstory(p_reviewer),
     tools=[
         reviewer_read_mcp_resource, 
         write_modular_ansible_files, 
@@ -286,8 +315,8 @@ if __name__ == "__main__":
     assert len(ansible_blueprint_designer.tools) == 1, f"Error: Architect must possess exactly 1 lookup tool. Found: {len(ansible_blueprint_designer.tools)}"
     print("  Pass: Architect Agent tool volume validated.")
 
-    # Test 2: Verify Code Compilation Engineer tool isolation boundary (Updated to 2 for read + write MCP bounds)
-    assert len(ansible_code_engineer.tools) == 2, f"Error: Code Engineer must possess exactly 2 integration tools. Found: {len(ansible_code_engineer.tools)}"
+    # Test 2: Verify Code Compilation Engineer tool isolation boundary (Updated to 3 for read + write + init MCP bounds)
+    assert len(ansible_code_engineer.tools) == 3, f"Error: Code Engineer must possess exactly 3 integration tools. Found: {len(ansible_code_engineer.tools)}"
     print("  Pass: Code Engineer Agent tool volume validated.")
 
     # Test 3: Verify QA Reviewer Engineer tool isolation boundary (Updated to 5 for physical validations)
