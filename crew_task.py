@@ -4,6 +4,11 @@ import logging
 from dotenv import load_dotenv
 from crewai import Crew, Task, Process
 
+# ==============================================================================
+# IMPORT THE NEW PYDANTIC SCHEMA
+# ==============================================================================
+from crew_schema import BlueprintSchema
+
 # Configure standardized runtime logging metrics before bootstrapping modules
 logging.basicConfig(
     level=logging.INFO,
@@ -59,9 +64,11 @@ def run_virtualization_orchestrator(user_prompt: str):
     architect_task = Task(
         description=t_architect["description"],
         expected_output=t_architect["expected_output"],
-        agent=ansible_blueprint_designer
+        agent=ansible_blueprint_designer,
+        # BIND THE SCHEMA HERE: Forces the agent to output strict JSON matching the Pydantic model
+        output_pydantic=BlueprintSchema
     )
-    logger.info("Task 1 [Architectural Design Block] successfully mapped onto Blueprint Designer Agent.")
+    logger.info("Task 1 [Architectural Design Block] successfully mapped onto Blueprint Designer Agent with Pydantic constraint.")
     
     # ==============================================================================
     # TASK 2: PRODUCTION CODE COMPILATION PHASE
@@ -71,6 +78,7 @@ def run_virtualization_orchestrator(user_prompt: str):
         description=t_coder["description"],
         expected_output=t_coder["expected_output"],
         agent=ansible_code_engineer,
+        # Handshake: The coder now receives a validated Pydantic model dump (JSON) instead of free text
         context=[architect_task]
     )
     logger.info("Task 2 [Code Compilation Block] successfully mapped and bound via context handshake to Task 1.")
