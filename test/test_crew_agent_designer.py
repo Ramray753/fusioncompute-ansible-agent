@@ -3,7 +3,7 @@ import sys
 from crewai import Crew, Task, Process
 
 # Import the decoupled architect agent from our centralized agent factory
-from agents import ansible_blueprint_designer
+from crew_agents import ansible_blueprint_designer
 
 def run_architect_test(user_prompt: str):
     """

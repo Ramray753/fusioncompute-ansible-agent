@@ -12,20 +12,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Establish absolute project root directory anchor (current folder for root crew.py)
+# Establish absolute project root directory anchor
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Bootstrap environment variables immediately at the primary application entry point
+# Bootstrap environment variables
 load_dotenv()
 
-# Import the decoupled MCP-enabled multi-agent factory instances securely
-from agents import ansible_blueprint_designer, ansible_code_engineer, ansible_code_reviewer
+# Import the decoupled MCP-enabled multi-agent factory instances securely from the new structure
+from crew_agents import (
+    ansible_blueprint_designer, 
+    ansible_code_engineer, 
+    ansible_code_reviewer
+)
 
 def _load_task_prompt_config() -> dict:
-    """
-    Helper function to load multi-line structural task descriptions and expectations
-    from the external decoupled configuration matrix 'tasks.yaml' inside the centralized 'conf/' folder.
-    """
+    """Helper function to load multi-line structural task descriptions from external decoupled configuration matrix."""
     config_file = os.path.join(BASE_DIR, "conf", "tasks.yaml")
     if not os.path.exists(config_file):
         config_file = os.path.join(BASE_DIR, "conf", "tasks.yml")
@@ -49,11 +50,10 @@ def run_virtualization_orchestrator(user_prompt: str):
     """
     logger.info(f"Initializing multi-agent pipeline orchestration for prompt: '{user_prompt}'")
     
-    # Load fully decoupled task blueprints from external configuration storage matrix
     task_prompts = _load_task_prompt_config()
     
     # ==============================================================================
-    # TASK 1: ARCHITECTURAL DESIGN & ROUTING PHASE (MCP Resource Discovery)
+    # TASK 1: ARCHITECTURAL DESIGN & ROUTING PHASE
     # ==============================================================================
     t_architect = task_prompts["architect_task"]
     architect_task = Task(
@@ -64,31 +64,31 @@ def run_virtualization_orchestrator(user_prompt: str):
     logger.info("Task 1 [Architectural Design Block] successfully mapped onto Blueprint Designer Agent.")
     
     # ==============================================================================
-    # TASK 2: PRODUCTION CODE COMPILATION PHASE (Context Bound to Task 1 Blueprint)
+    # TASK 2: PRODUCTION CODE COMPILATION PHASE
     # ==============================================================================
     t_coder = task_prompts["coder_task"]
     coder_task = Task(
         description=t_coder["description"],
         expected_output=t_coder["expected_output"],
         agent=ansible_code_engineer,
-        context=[architect_task] # Handshake: Restricts code compiler to the architect's metadata boundaries
+        context=[architect_task]
     )
     logger.info("Task 2 [Code Compilation Block] successfully mapped and bound via context handshake to Task 1.")
     
     # ==============================================================================
-    # TASK 3: AUDIT & QUALITY ASSURANCE REVIEW PHASE (Context Bound to Tasks 1 & 2)
+    # TASK 3: AUDIT & QUALITY ASSURANCE REVIEW PHASE
     # ==============================================================================
     t_reviewer = task_prompts["reviewer_task"]
     reviewer_task = Task(
         description=t_reviewer["description"],
         expected_output=t_reviewer["expected_output"],
         agent=ansible_code_reviewer,
-        context=[architect_task, coder_task] # Handshake: Grants reviewer complete visibility into designs and code
+        context=[architect_task, coder_task]
     )
     logger.info("Task 3 [Static Quality Gate Block] successfully mapped and bound via context handshake to upstream tasks.")
     
     # ==============================================================================
-    # PIPELINE CRADLE EXECUTION ENGINE (Enforces Mandatory Waterfall Progression)
+    # PIPELINE CRADLE EXECUTION ENGINE
     # ==============================================================================
     production_crew = Crew(
         agents=[
@@ -101,7 +101,7 @@ def run_virtualization_orchestrator(user_prompt: str):
             coder_task, 
             reviewer_task
         ],
-        process=Process.sequential, # Enforce strict waterfall stage-gating mechanism
+        process=Process.sequential,
         verbose=True
     )
     
