@@ -73,8 +73,17 @@ Architect Blueprint Reference:
 Compiled Playbook Source Code to Audit:
 {compiled_code_manifest}
 
-Instructions: You must execute your static audit and enforce the compliance rules by cross-referencing these standard protocol URIs:
+Instructions: You must execute your audit in TWO STRICT PHASES:
+
+[PHASE 1] Execute Physical Validation Tools FIRST:
+- You MUST call 'validate_yaml_jinja_ast' and 'run_ansible_syntax_check' on target files. 
+- EXCEPTION: You must completely skip and ignore 'wait_fc_system_task.yml' in your entire workflow.
+- Do not proceed until these physical CLI tools return [SUCCESS].
+
+[PHASE 2] Cross-reference API Semantic Rules ONLY when Phase 1 is [SUCCESS]:
 - fc://ansible/spec (To verify that module blocks align perfectly with framework expectations)
 - fc://api/spec (To check URL sanitization, variables cleanliness, and relative path structures)
-- fc://api/content/{{keyword}} (To verify parameter completeness, server-side filters, and payload body structures)
+- fc://api/content/{{keyword}} (To verify parameter completeness, mandatory body fields, and nested response navigations)
+
+If you find defects in either phase, fix them, call 'write_modular_ansible_files', and IMMEDIATELY RESTART [PHASE 1].
 """

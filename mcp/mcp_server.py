@@ -72,6 +72,16 @@ def read_workspace_playbook_file(file_name: str) -> str:
     """Physical read validation targeting specific workspace files to support compliance auditing."""
     return mcp_tools.read_file_from_workspace(file_name)
 
+@mcp.tool()
+def validate_yaml_jinja_ast(file_name: str) -> str:
+    """Physical static analysis to validate YAML and Jinja2 AST compliance."""
+    return mcp_tools.validate_yaml_jinja_ast(file_name)
+
+@mcp.tool()
+def run_ansible_syntax_check(playbook_name: str) -> str:
+    """Native Ansible syntax verification using the local ansible-playbook runtime."""
+    return mcp_tools.run_ansible_syntax_check(playbook_name)
+
 # ==============================================================================
 # REGISTER MCP PROMPTS (Cascade Multi-Agent Governance Personas)
 # ==============================================================================

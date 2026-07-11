@@ -203,6 +203,26 @@ def read_workspace_playbook_file(file_name: str) -> str:
     except Exception as error:
         return f"[MCP CLIENT ERROR] Failed to read target source file from workspace. Details: {str(error)}"
 
+@tool("validate_yaml_jinja_ast")
+def validate_yaml_jinja_ast(file_name: str) -> str:
+    """
+    Physical static analysis to validate YAML and Jinja2 AST compliance.
+    """
+    try:
+        return asyncio.run(_call_mcp_tool("validate_yaml_jinja_ast", {"file_name": file_name}))
+    except Exception as error:
+        return f"[MCP CLIENT ERROR] Failed to validate AST. Details: {str(error)}"
+
+@tool("run_ansible_syntax_check")
+def run_ansible_syntax_check(playbook_name: str) -> str:
+    """
+    Native Ansible syntax verification using the local ansible-playbook runtime.
+    """
+    try:
+        return asyncio.run(_call_mcp_tool("run_ansible_syntax_check", {"playbook_name": playbook_name}))
+    except Exception as error:
+        return f"[MCP CLIENT ERROR] Failed to run syntax check. Details: {str(error)}"
+
 # ==============================================================================
 # AGENT 1: BLUEPRINT ARCHITECTURE DESIGNER ([Automation Architect])
 # ==============================================================================
@@ -211,7 +231,7 @@ ansible_blueprint_designer = Agent(
     role=p_designer["role"],
     goal=p_designer["goal"],
     backstory=p_designer["backstory"],
-    tools=[designer_read_mcp_resource], # Programmatically bounded onto the Designer resource whitelist
+    tools=[designer_read_mcp_resource],
     verbose=True,
     allow_delegation=False,
     llm=analyst_llm
@@ -225,7 +245,9 @@ ansible_code_engineer = Agent(
     role=p_engineer["role"],
     goal=p_engineer["goal"],
     backstory=p_engineer["backstory"],
-    tools=[engineer_read_mcp_resource, write_modular_ansible_files], # Programmatically bounded onto the Engineer whitelist
+    tools=[
+        engineer_read_mcp_resource, 
+        write_modular_ansible_files], 
     verbose=True,
     allow_delegation=False,
     llm=coding_llm
@@ -234,12 +256,21 @@ ansible_code_engineer = Agent(
 # ==============================================================================
 # AGENT 3: AUTOMATION CODE REVIEW & QUALITY ASSURANCE ENGINEER ([Code Reviewer])
 # ==============================================================================
+# ==============================================================================
+# AGENT 3: AUTOMATION CODE REVIEW & QUALITY ASSURANCE ENGINEER ([Code Reviewer])
+# ==============================================================================
 p_reviewer = agent_prompts["ansible_code_reviewer"]
 ansible_code_reviewer = Agent(
     role=p_reviewer["role"],
     goal=p_reviewer["goal"],
     backstory=p_reviewer["backstory"],
-    tools=[reviewer_read_mcp_resource, write_modular_ansible_files, read_workspace_playbook_file], # Bounded onto Reviewer whitelist
+    tools=[
+        reviewer_read_mcp_resource, 
+        write_modular_ansible_files, 
+        read_workspace_playbook_file,
+        validate_yaml_jinja_ast, 
+        run_ansible_syntax_check
+    ], 
     verbose=True,
     allow_delegation=False,
     llm=coding_llm
@@ -259,8 +290,8 @@ if __name__ == "__main__":
     assert len(ansible_code_engineer.tools) == 2, f"Error: Code Engineer must possess exactly 2 integration tools. Found: {len(ansible_code_engineer.tools)}"
     print("  Pass: Code Engineer Agent tool volume validated.")
 
-    # Test 3: Verify QA Reviewer Engineer tool isolation boundary (Updated to 3 for read + write + review visibility)
-    assert len(ansible_code_reviewer.tools) == 3, f"Error: Reviewer must possess exactly 3 validation tools. Found: {len(ansible_code_reviewer.tools)}"
+    # Test 3: Verify QA Reviewer Engineer tool isolation boundary (Updated to 5 for physical validations)
+    assert len(ansible_code_reviewer.tools) == 5, f"Error: Reviewer must possess exactly 5 validation tools. Found: {len(ansible_code_reviewer.tools)}"
     print("  Pass: Reviewer Agent tool volume and filesystem visibility validated.")
-
+    
     print("\n" + "="*21 + " PIPELINE FACTORY INFRASTRUCTURE GREEN " + "="*21 + "\n")
