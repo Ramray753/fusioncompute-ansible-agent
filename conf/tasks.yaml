@@ -1,51 +1,21 @@
+# conf/tasks.yaml
+
 architect_task:
   description: |
     Thoroughly analyze the incoming infrastructure request: '{user_request}'.
-    Query available section headings to isolate the precise subset of REST API names required. 
-    You MUST populate these exact Chinese API names into the 'filtered_apis_chinese_names' list.
-    
-    Inspect technical parameter tables for these candidate APIs to discover any hidden structural data dependencies and determine if additional prerequisite query tasks must be injected into the workflow.
-    
-    Formulate a comprehensive multi-file task topology layout and execution workflow. You MUST convert this workflow into an ordered list of task objects within the 'workflow_design' field.
-    
-    For each task object in the 'workflow_design' list, adhere to the following granularity:
-    - task_type: Strictly route as either 'builtin' or 'fusioncompute'.
-    - task_number: Assign a sequential identifier (e.g., '[Task 1.1]').
-    - file_name: Specify the exact target YAML file (e.g., 'main.yml' or 'tasks/start_vm.yml').
-    - task_name: Briefly describe the task name.
-    - task_object & module_name: Briefly describe the task objective and specify the required Ansible module.
-    - api_chinese_name (If fusioncompute): The literal Chinese API heading.
-    - required_params (If fusioncompute): Detail the specific variables the downstream coder needs to assemble for the payload (e.g., "Needs clusterUrn from previous task and VM name from vars").
-    - register_params (If fusioncompute): Detail what specific output variables need to be registered for downstream use (e.g., "Register the returned host ID").
-    
-    If supplementary scripts are needed, populate the 'supplementary_script_purpose' list.
+    Follow your defined core workflow to isolate the precise subset of REST API names required, deduce structural data dependencies, and formulate a comprehensive multi-file task topology layout.
   expected_output: "A strict JSON data object strictly adhering to the BlueprintSchema Pydantic model, detailing the filtered APIs and the comprehensive workflow design."
 
 coder_task:
   description: |
-    Analyze the technical endpoint registry and execution workflow design blueprint provided by the upstream [Automation Architect].
-    NOTE: The context you receive is a strictly validated JSON structure dump (based on BlueprintSchema). You must parse the 'filtered_apis_chinese_names' and iterate through the 'workflow_design' list.
-    
-    Execute the code generation following the strict Standard Operating Procedure (SOP) defined in your core workflow:
-    1. Initialize the output directory.
-    2. Read necessary MCP resources (specifications and benchmark examples based on whether batch operations are required).
-    3. Parse the JSON blueprint, routing tasks based on the 'task_type' discriminator ('builtin' vs 'fusioncompute') and organizing them by 'file_name'.
-    4. Query exact parameter schemas for each requested Chinese API name to retrieve valid fields and body definitions.
-    5. Translate the structured JSON layout into real production-grade automation files, ensuring all business configurations reside exclusively inside the user config block within 'main.yml', leaving 'commons.yml' structural values unchanged.
-    
-    Enforce a strict ban on embedded Python code within YAML files, utilize accurate generic formatting templates, properly navigate response encapsulation wrappers, and commit the complete file matrix to disk via MCP tools.
+    Analyze the execution workflow design blueprint provided by the upstream [Automation Architect].
+    Execute the code generation strictly following the Standard Operating Procedure (SOP) and compliance rules defined in your core workflow.
+    Translate the structured JSON layout into real production-grade Ansible automation playbook matrices and commit them to local disk storage using your assigned MCP tools.
   expected_output: "A file system layout execution confirmation verifying that the completed playbook matrices were committed to local disk storage."
 
 reviewer_task:
   description: |
     Perform a rigorous compliance audit and quality assurance review on the compiled and deployed playbook files.
-    Read the absolute source code matrices directly from the filesystem using your dedicated local access tools. 
-    Cross-reference the retrieved code against the [Automation Architect]'s structured JSON design blueprint (BlueprintSchema), official schemas, and all established high-density production guidelines.
-    
-    You MUST execute your audit in two strict phases:
-    - PHASE 1: Physical Syntax Validation (Run local syntax checkers and fix any physical errors first).
-    - PHASE 2: API Semantic & Logical Audit (Parse the JSON blueprint, extract APIs where task_type == 'fusioncompute', verify parameter schemas, URL sanitization, and response encapsulation navigation).
-    
-    Verify variable isolation boundaries, ensure the complete absence of embedded Python snippets within YAML, and audit generic structural blocks.
-    If any discrepancies, file naming errors, or parameter omissions are uncovered, execute your filesystem tools to rewrite and commit compliant, remediated files back to disk. Return to Phase 1 after any write operation.
+    Execute your audit strictly according to the two phases (Physical Syntax Validation and API Semantic Audit) defined in your core workflow.
+    Cross-reference the retrieved code against the [Automation Architect]'s structured JSON design blueprint and ensure all compliance boundaries are met. Correct and commit any necessary fixes.
   expected_output: "A final compliance receipt validating architectural fidelity, syntax perfection, and rule adherence across all committed automation files."

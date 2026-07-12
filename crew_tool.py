@@ -36,83 +36,109 @@ async def _call_mcp_tool(name: str, arguments: dict) -> str:
             return "Target tool action yielded no response payload."
 
 # ==============================================================================
-# ROLE-BASED HARD ISOLATED LOOKUP TOOLS
+# ROLE-BASED HARD ISOLATED LOOKUP TOOLS (DYNAMIC FACTORY)
 # ==============================================================================
 
-@tool("designer_read_mcp_resource")
-def designer_read_mcp_resource(uri: str) -> str:
+def get_role_based_read_tools(script_type: int):
     """
-    Read-only context acquisition tool restricted strictly to the [Automation Architect].
-    Input 'uri' must exactly match one of the following predefined FC resources or dynamic content API strings.
-    - "fc://api/headings",
-    - "fc://ansible/spec",
-    - "fc://ansible/example/single",
-    - "fc://ansible/example/sequential",
-    - "fc://ansible/example/parallel"
-    - "fc://api/content/<keyword>"
+    Factory function to generate role-based read tools dynamically configured 
+    for the given script_type to prevent hallucination and resource leaks.
     """
-    allowed_static_uris = [
+    
+    # 1. Define foundational static URIs
+    designer_allowed_static_uris = [
         "fc://api/headings",
         "fc://ansible/spec",
-        "fc://ansible/example/single",
-        "fc://ansible/example/sequential",
-        "fc://ansible/example/parallel"
+        "fc://ansible/example/single"
     ]
-    if uri not in allowed_static_uris and not uri.startswith("fc://api/content/"):
-        return f"[SECURITY ACCESS DENIED] The Automation Architect is unauthorized to pull context from URI: '{uri}'"
-
-    try:
-        return asyncio.run(_call_mcp_resource(uri))
-    except Exception as error:
-        return f"[MCP CLIENT ERROR] Failed to read resource context at '{uri}'. Details: {str(error)}"
-
-@tool("engineer_read_mcp_resource")
-def engineer_read_mcp_resource(uri: str) -> str:
-    """
-    Read-only context acquisition tool restricted strictly to the [Code Engineer].
-    Input 'uri' must exactly match one of the following predefined FC resources or dynamic content API strings.
-    - "fc://ansible/spec",
-    - "fc://api/spec",
-    - "fc://ansible/example/single",
-    - "fc://ansible/example/sequential",
-    - "fc://ansible/example/parallel"
-    - "fc://api/content/<keyword>"
-    """
-    allowed_static_uris = [
-        "fc://ansible/spec",
+    engineer_allowed_static_uris = [
         "fc://api/spec",
-        "fc://ansible/example/single",
-        "fc://ansible/example/sequential",
-        "fc://ansible/example/parallel"
-    ]
-    if uri not in allowed_static_uris and not uri.startswith("fc://api/content/"):
-        return f"[SECURITY ACCESS DENIED] The Code Engineer is unauthorized to pull context from URI: '{uri}'"
-
-    try:
-        return asyncio.run(_call_mcp_resource(uri))
-    except Exception as error:
-        return f"[MCP CLIENT ERROR] Failed to read resource context at '{uri}'. Details: {str(error)}"
-
-@tool("reviewer_read_mcp_resource")
-def reviewer_read_mcp_resource(uri: str) -> str:
-    """
-    Read-only context acquisition tool restricted strictly to the [Code Reviewer].
-    Input 'uri' must exactly match one of the following predefined FC resources or dynamic content API strings.
-    - "fc://ansible/spec",
-    - "fc://api/spec"
-    - "fc://api/content/<keyword>"
-    """
-    allowed_static_uris = [
         "fc://ansible/spec",
-        "fc://api/spec"
+        "fc://ansible/example/single"
     ]
-    if uri not in allowed_static_uris and not uri.startswith("fc://api/content/"):
-        return f"[SECURITY ACCESS DENIED] The Code Reviewer is unauthorized to pull context from URI: '{uri}'"
+    
+    # Append specific batch examples based on dynamic routing
+    if script_type == 2:
+        designer_allowed_static_uris.append("fc://ansible/example/sequential")
+        engineer_allowed_static_uris.append("fc://ansible/example/sequential")
+    elif script_type == 3:
+        designer_allowed_static_uris.append("fc://ansible/example/parallel")
+        engineer_allowed_static_uris.append("fc://ansible/example/parallel")
 
-    try:
-        return asyncio.run(_call_mcp_resource(uri))
-    except Exception as error:
-        return f"[MCP CLIENT ERROR] Failed to read resource context at '{uri}'. Details: {str(error)}"
+    # 2. Dynamically construct docstrings so the LLM only "sees" the permitted URIs
+    designer_doc = (
+        "Read-only context acquisition tool restricted strictly to the [Automation Architect].\n"
+        "Input 'uri' must exactly match one of the following predefined FC resources or dynamic content API strings.\n"
+    ) + "".join([f"    - \"{uri}\"\n" for uri in designer_allowed_static_uris]) + "    - \"fc://api/content/<keyword>\""
+    
+    engineer_doc = (
+        "Read-only context acquisition tool restricted strictly to the [Code Engineer].\n"
+        "Input 'uri' must exactly match one of the following predefined FC resources or dynamic content API strings.\n"
+    ) + "".join([f"    - \"{uri}\"\n" for uri in engineer_allowed_static_uris]) + "    - \"fc://api/content/<keyword>\""
+
+    # 3. Create the tools with physical interception logic
+    @tool("designer_read_mcp_resource")
+    def designer_read_mcp_resource(uri: str) -> str:
+        """Dynamic Description applied below."""
+        
+        # [PHYSICAL INTERCEPTION] Hard block hallucinatory cross-routing access
+        if "example/sequential" in uri and script_type != 2:
+            return "[FATAL ERROR] Permission denied. Sequential batch example is restricted in current operation mode."
+        if "example/parallel" in uri and script_type != 3:
+            return "[FATAL ERROR] Permission denied. Parallel batch example is restricted in current operation mode."
+            
+        if uri not in designer_allowed_static_uris and not uri.startswith("fc://api/content/"):
+            return f"[SECURITY ACCESS DENIED] The Automation Architect is unauthorized to pull context from URI: '{uri}'"
+
+        try:
+            return asyncio.run(_call_mcp_resource(uri))
+        except Exception as error:
+            return f"[MCP CLIENT ERROR] Failed to read resource context at '{uri}'. Details: {str(error)}"
+
+    @tool("engineer_read_mcp_resource")
+    def engineer_read_mcp_resource(uri: str) -> str:
+        """Dynamic Description applied below."""
+        
+        # [PHYSICAL INTERCEPTION] Hard block hallucinatory cross-routing access
+        if "example/sequential" in uri and script_type != 2:
+            return "[FATAL ERROR] Permission denied. Sequential batch example is restricted in current operation mode."
+        if "example/parallel" in uri and script_type != 3:
+            return "[FATAL ERROR] Permission denied. Parallel batch example is restricted in current operation mode."
+            
+        if uri not in engineer_allowed_static_uris and not uri.startswith("fc://api/content/"):
+            return f"[SECURITY ACCESS DENIED] The Code Engineer is unauthorized to pull context from URI: '{uri}'"
+
+        try:
+            return asyncio.run(_call_mcp_resource(uri))
+        except Exception as error:
+            return f"[MCP CLIENT ERROR] Failed to read resource context at '{uri}'. Details: {str(error)}"
+
+    @tool("reviewer_read_mcp_resource")
+    def reviewer_read_mcp_resource(uri: str) -> str:
+        """
+        Read-only context acquisition tool restricted strictly to the [Code Reviewer].
+        Input 'uri' must exactly match one of the following predefined FC resources or dynamic content API strings.
+        - "fc://ansible/spec",
+        - "fc://api/spec"
+        - "fc://api/content/<keyword>"
+        """
+        allowed_static_uris = [
+            "fc://ansible/spec",
+            "fc://api/spec"
+        ]
+        if uri not in allowed_static_uris and not uri.startswith("fc://api/content/"):
+            return f"[SECURITY ACCESS DENIED] The Code Reviewer is unauthorized to pull context from URI: '{uri}'"
+
+        try:
+            return asyncio.run(_call_mcp_resource(uri))
+        except Exception as error:
+            return f"[MCP CLIENT ERROR] Failed to read resource context at '{uri}'. Details: {str(error)}"
+
+    # Override descriptions natively to ensure the LLM parses the updated route URIs
+    designer_read_mcp_resource.description = designer_doc
+    engineer_read_mcp_resource.description = engineer_doc
+
+    return designer_read_mcp_resource, engineer_read_mcp_resource, reviewer_read_mcp_resource
 
 # ==============================================================================
 # MCP ACTION TOOLS (With Physical File-System Side-Effects)

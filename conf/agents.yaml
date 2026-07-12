@@ -6,9 +6,7 @@ ansible_blueprint_designer:
       1. Read MCP resource 'fc://api/headings' to inspect all available APIs to construct workflow.
       2. Read MCP resource 'fc://ansible/spec' to evaluate FusionCompute Ansible framework mechanisms.
       3. Read MCP resource 'fc://ansible/exmaple/single' to learn basic end-to-end project structure and design patterns from an Ansible Playbook example using FusionCompute Ansible framework.
-      4. CONDITION-BASED WORKFLOW SEGREGATION FOR BATCH OPERATIONS: Based on user prompt, reference at most one of 4.1 and 4.2, based on SEQUENTIAL or PARALLEL operational requirement, NEVER BOTH. If batch operations are not required in user prompt, you MUST skip this step.
-         - 4.1 If the user prompt explicitly mandates reading data from external files and executing SEQUENTIAL batch operations, you MUST read the MCP resource 'fc://ansible/exmaple/sequential' exactly once. Deeply analyze its looping orchestrations and closely mimic its multi-file topology design. Crucially, the detailed execution block running for each sequenced resource item must be isolated into a separate standalone YAML task file, matching the pattern in the example script.
-         - 4.2 If the user prompt explicitly mandates reading data from external files and executing PARALLEL batch operations, you MUST read the MCP resource 'fc://ansible/exmaple/parallel' exactly once. Deeply analyze its concurrency paradigms and closely mimic its multi-file topology design. Crucially, the detailed execution block running for each concurrent resource item must be isolated into a separate standalone YAML task file, matching the pattern in the example script.
+      {batch_workflow_instruction}
       5. Consider which candidate APIs need to be selected from the API list obtained in Step 1 for the workflow constructed to satisfy the user's description. For each candidate API name identified, read the dynamic MCP resource 'fc://api/content/<keyword>' by providing precise Chinese section names to discover required input fields (such as clusterUrn or hostUrn). Use this information to deduce and insert mandatory precursor query tasks (e.g., resource lookups) into the workflow. Crucially, when designing precursor lookup tasks (especially fuzzy searches by name), explicitly instruct the downstream engineer to iterate and match the exact resource name from the returned list to extract the ID, rather than defaulting to the first item.
       6. Synthesize your final architectural blueprints based on the mapped file layout and discovered parameter data dependencies. Read the dynamic MCP resource 'fc://api/content/<keyword>' if double checking parameter data dependencies is necessary.
   artifact_requirement: 
@@ -39,8 +37,7 @@ ansible_blueprint_designer:
       - fc://api/headings
       - fc://ansible/spec
       - fc://ansible/example/single
-      - fc://ansible/example/sequentia
-      - fc://ansible/example/parallel
+      {available_example_mcp}
       - fc://api/content/<keyword>
 
 ansible_code_engineer:
@@ -53,9 +50,7 @@ ansible_code_engineer:
       2. Read MCP resource 'fc://ansible/spec' to evaluate FusionCompute Ansible framework mechanisms.
       3. Read MCP resource 'fc://api/spec' to parse global API protocol structures, especially the meaning of each URI and Object ID.
       4. Read MCP resource 'fc://ansible/exmaple/single' to learn basic end-to-end project structure and design patterns from an Ansible Playbook example using FusionCompute Ansible framework.
-      5. CONDITION-BASED WORKFLOW SEGREGATION FOR BATCH OPERATIONS: Based on architect's JSON design blueprint, execute at most one of 5.1 and 5.2, based on SEQUENTIAL or PARALLEL operational requirement, NEVER BOTH. If batch operations are not required in architect's JSON design blueprint, you MUST skip this step.
-         - 5.1 If the architect's design blueprint explicitly mandates reading data from external files and executing SEQUENTIAL batch operations, you MUST read the MCP resource 'fc://ansible/exmaple/sequential' exactly once. Deeply analyze its looping orchestrations and closely mimic its multi-file topology design. Crucially, the detailed execution block running for each sequenced resource item must be isolated into a separate standalone YAML task file, matching the pattern in the example script.
-         - 5.2 If the architect's design blueprint explicitly mandates reading data from external files and executing PARALLEL batch operations, you MUST read the MCP resource 'fc://ansible/exmaple/parallel' exactly once. Deeply analyze its concurrency paradigms and closely mimic its multi-file topology design. Crucially, the detailed execution block running for each concurrent resource item must be isolated into a separate standalone YAML task file, matching the pattern in the example script.
+      {batch_workflow_instruction}
       6. JSON PARSING & API EXTRACTION: Your upstream context from the Architect is a strict JSON string (BlueprintSchema). Parse this JSON and extract all API Chinese names from the 'filtered_apis_chinese_names' list. For each API Chinese name, read the dynamic MCP resource 'fc://api/content/<keyword>' with the exact API name in Chinese to retrieve targeted parameter tables and HTTP request and response body schemas. When looking up an API for a specific resource object, you must first read the metadata of that object type (if available). For instance, when retrieving an API related to VMs, you must first read the dynamic MCP resource 'fc://api/content/<keyword>' to look up <虚拟机元数据>.
       7. ITERATE AND TRANSLATE JSON WORKFLOW: Iterate through the 'workflow_design' list in the JSON blueprint. Group tasks by their 'file_name' attribute to build the multi-file topology. For EACH task, you MUST check the 'task_type' discriminator to route your generation logic:
          - Routing branch A: If task_type == 'builtin', you are dealing with standard Ansible operations. Use 'module_name' (e.g., debug, set_fact, include_tasks) and follow the intent described in 'task_object' and 'register_params' to write native Ansible YAML.
@@ -75,8 +70,7 @@ ansible_code_engineer:
       - fc://ansible/spec
       - fc://api/spec
       - fc://ansible/example/single
-      - fc://ansible/example/sequential
-      - fc://ansible/example/parallel
+      {available_example_mcp}
       - fc://api/content/<keyword>
   available_mcp_tools: |
     Rely on the following MCP tools:
