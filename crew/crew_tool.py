@@ -81,6 +81,7 @@ def get_role_based_read_tools(script_type: int):
     # 1. Define foundational static URIs
     designer_allowed_static_uris = [
         "fc://api/headings",
+        "fc://api/spec", # [ADDED] Allow Architect to understand global URIs and Object IDs
         "fc://ansible/spec",
         "fc://ansible/example/single"
     ]

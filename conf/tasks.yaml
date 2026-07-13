@@ -23,5 +23,6 @@ remediation_task:
   description: |
     Analyze the ReviewSchema JSON payload provided by the upstream [Code Reviewer].
     You must iterate through the errors detailed in the feedback. For each error, use the 'file_name' and 'review_comment' to accurately target and modify the broken files using your write tools.
+    CRITICAL INCREMENTAL FIX RULE: You MUST first call the 'read_workspace_playbook_file' tool to read the current state of the broken file before writing. Apply incremental and targeted fixes rather than completely rewriting the entire file matrix.
     After committing any fixes, you MUST re-run your syntax validation tools to ensure your modifications did not introduce new syntax errors.
   expected_output: "A final confirmation string verifying that all reviewer feedback has been applied and successfully syntax-checked."

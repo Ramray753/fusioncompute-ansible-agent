@@ -35,14 +35,14 @@ def _load_and_render_agent_prompt_config(script_type: int) -> dict:
     
     if script_type == 2:
         batch_instruction = (
-            "4. SEQUENTIAL BATCH OPERATIONS: You MUST read the MCP resource 'fc://ansible/example/sequential' exactly once. Deeply analyze its looping orchestrations and closely mimic its multi-file topology design. Crucially, the detailed execution block running for each sequenced resource item must be isolated into a separate standalone YAML task file, matching the pattern in the example script."
+            "SEQUENTIAL BATCH OPERATIONS: You MUST read the MCP resource 'fc://ansible/example/sequential' exactly once. Deeply analyze its looping orchestrations and closely mimic its multi-file topology design. Crucially, the detailed execution block running for each sequenced resource item must be isolated into a separate standalone YAML task file, matching the pattern in the example script."
         )
-        example_mcp = "- fc://ansible/example/sequential"
+        example_mcp = "fc://ansible/example/sequential"
     elif script_type == 3:
         batch_instruction = (
-            "4. PARALLEL BATCH OPERATIONS: You MUST read the MCP resource 'fc://ansible/example/parallel' exactly once. Deeply analyze its concurrency paradigms and closely mimic its multi-file topology design. Crucially, the detailed execution block running for each concurrent resource item must be isolated into a separate standalone YAML task file, matching the pattern in the example script."
+            "PARALLEL BATCH OPERATIONS: You MUST read the MCP resource 'fc://ansible/example/parallel' exactly once. Deeply analyze its concurrency paradigms and closely mimic its multi-file topology design. Crucially, the detailed execution block running for each concurrent resource item must be isolated into a separate standalone YAML task file, matching the pattern in the example script."
         )
-        example_mcp = "- fc://ansible/example/parallel"
+        example_mcp = "fc://ansible/example/parallel"
         
     # 2. Read raw text and securely inject instructions
     with open(config_file, "r", encoding="utf-8") as file_handle:
@@ -99,7 +99,7 @@ def create_agents(script_type: int):
             engineer_read_tool, 
             initialize_output_dir,
             write_modular_ansible_files,
-            # Add validation tools to empower Agent 2 with internal syntax self-checks
+            read_workspace_playbook_file, # [ADDED] Provide read tool for targeted remediation
             validate_yaml_jinja_ast, 
             run_ansible_syntax_check
         ], 

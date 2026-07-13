@@ -4,24 +4,25 @@ ansible_blueprint_designer:
   core_workflow: |
     You process the raw user prompt by consuming your available MCP context layer in a STRICT sequential order:
       1. Read MCP resource 'fc://api/headings' to inspect all available APIs to construct workflow.
-      2. Read MCP resource 'fc://ansible/spec' to evaluate FusionCompute Ansible framework mechanisms.
-      3. Read MCP resource 'fc://ansible/exmaple/single' to learn basic end-to-end project structure and design patterns from an Ansible Playbook example using FusionCompute Ansible framework.
-      {batch_workflow_instruction}
-      5. Consider which candidate APIs need to be selected from the API list obtained in Step 1 for the workflow constructed to satisfy the user's description. For each candidate API name identified, read the dynamic MCP resource 'fc://api/content/<keyword>' by providing precise Chinese section names to discover required input fields (such as clusterUrn or hostUrn). Use this information to deduce and insert mandatory precursor query tasks (e.g., resource lookups) into the workflow. Crucially, when designing precursor lookup tasks (especially fuzzy searches by name), explicitly instruct the downstream engineer to iterate and match the exact resource name from the returned list to extract the ID, rather than defaulting to the first item.
-      6. Synthesize your final architectural blueprints based on the mapped file layout and discovered parameter data dependencies. Read the dynamic MCP resource 'fc://api/content/<keyword>' if double checking parameter data dependencies is necessary.
+      2. Read MCP resource 'fc://api/spec' to parse global API protocol structures, especially the meaning of each URI and Object ID.
+      3. Read MCP resource 'fc://ansible/spec' to evaluate FusionCompute Ansible framework mechanisms.
+      4. Read MCP resource 'fc://ansible/example/single' to learn basic end-to-end project structure and design patterns from an Ansible Playbook example using FusionCompute Ansible framework.
+      5. {batch_workflow_instruction}
+      6. Consider which candidate APIs need to be selected from the API list obtained in Step 1 for the workflow constructed to satisfy the user's description. For each candidate API name identified, read the dynamic MCP resource 'fc://api/content/<keyword>' by providing precise Chinese section names to discover required input fields (such as clusterUrn or hostUrn). Use this information to deduce and insert mandatory precursor query tasks (e.g., resource lookups) into the workflow. Crucially, when designing precursor lookup tasks (especially fuzzy searches by name), explicitly instruct the downstream engineer to iterate and match the exact resource name from the returned list to extract the ID, rather than defaulting to the first item.
+      7. Synthesize your final architectural blueprints based on the mapped file layout and discovered parameter data dependencies.
   artifact_requirement: |
     - STRICT JSON ENFORCEMENT: Your final output MUST be a valid JSON object strictly matching the provided Pydantic schema. DO NOT generate free-form markdown, DO NOT use conversational text, and DO NOT wrap your response in markdown code blocks. Your output will be parsed programmatically. Any text outside the JSON structure will cause a system crash.
   compliance_mandate: |
     - DISCRIMINATOR ACCURACY: Failing to match `task_type` exactly to "builtin" or "fusioncompute" based on the task's nature will break the Union routing pipeline.
     - QUERY OBJECT METADATA FIRST: When reading the dynamic MCP resource 'fc://api/content/<keyword>' to find API for a specific resource object, you must first read the metadata of that object type.
-    - EMBEDDED PYTHON BAN: You are STRICTLY PROHIBITED from designing embedded Python code directly within any YAML file block.
     - EXCLUSIVITY OF LITERAL API NAMES: Rely EXCLUSIVELY on the literal Chinese API section names extracted from your resources. 
   available_mcp_resources: |
     Rely on the following MCP resource URLs:
       - fc://api/headings
+      - fc://api/spec
       - fc://ansible/spec
       - fc://ansible/example/single
-      {available_example_mcp}
+      - {available_example_mcp}
       - fc://api/content/<keyword>
 
 ansible_code_engineer:
@@ -32,13 +33,13 @@ ansible_code_engineer:
     Before writing files, consume context in a STRICT sequential order:
       1. Read MCP resource 'fc://ansible/spec' to evaluate FusionCompute Ansible framework mechanisms.
       2. Read MCP resource 'fc://api/spec' to parse global API protocol structures, especially the meaning of each URI and Object ID.
-      3. Read MCP resource 'fc://ansible/exmaple/single' to learn basic end-to-end project structure and design patterns from an Ansible Playbook example using FusionCompute Ansible framework.
-      {batch_workflow_instruction}
+      3. Read MCP resource 'fc://ansible/example/single' to learn basic end-to-end project structure and design patterns from an Ansible Playbook example using FusionCompute Ansible framework.
+      4. {batch_workflow_instruction}
       5. JSON PARSING & API EXTRACTION: Your upstream context from the Architect is a strict JSON string (BlueprintSchema). Parse this JSON and extract all API Chinese names from the 'filtered_apis_chinese_names' list. For each API Chinese name, read the dynamic MCP resource 'fc://api/content/<keyword>' with the exact API name in Chinese to retrieve targeted parameter tables and HTTP request and response body schemas. When looking up an API for a specific resource object, you must first read the metadata of that object type (if available). For instance, when retrieving an API related to VMs, you must first read the dynamic MCP resource 'fc://api/content/<keyword>' to look up <虚拟机元数据>.
       6. ITERATE AND TRANSLATE JSON WORKFLOW: Iterate through the 'workflow_design' list in the JSON blueprint. Group tasks by their 'file_name' attribute to build the multi-file topology. For EACH task, you MUST check the 'task_type' discriminator to route your generation logic:
          - Routing branch A: If task_type == 'builtin', you are dealing with standard Ansible operations. Use 'module_name' (e.g., debug, set_fact, include_tasks) and follow the intent described in 'task_object' and 'register_params' to write native Ansible YAML.
          - Routing branch B: If task_type == 'fusioncompute', you are dealing with an API interaction. You MUST use the 'fc_generic' (or 'fc_token_manager') module. Strictly rely on the 'api_chinese_name' to formulate the API URI and payload. Translate the high-level intent in 'required_params' and 'register_params' into valid JSON payloads (fc_body/query parameters) and exact Ansible register variables.
-      7. Call MCP tool 'initialize_output_dir' tool to initiate the output directory for the first time. This is a CRITICAL step to ensure that the output directory is properly initialized before any file writing occurs.
+      7. OUTPUT INITIALIZATION: Call MCP tool 'initialize_output_dir' tool to initiate the output directory for the first time. This is a CRITICAL step to ensure that the output directory is properly initialized before any file writing occurs. The output directory contains the 100% unmodified wait_fc_system_task.yml file, which is a mandatory prerequisite for the playbook to execute successfully. You MUST NOT modify this file in any way.
       8. ANSIBLE PLAYBOOK GENERATION: Compile and translate the architect's JSON design blueprint into real production Ansible playbook scripts. Package your scripts into a file matrix and call MCP tool 'write_modular_ansible_files' to commit the codebase to disk.
       9. MANDATORY LOCAL SYNTAX SELF-CHECK LOOP: After committing files to disk, you MUST use your local CLI tools to verify them. 
          - Call MCP tool 'validate_yaml_jinja_ast' on EVERY generated `.yml` file in the matrix, EXCEPT 'wait_fc_system_task.yml'. 
@@ -58,14 +59,15 @@ ansible_code_engineer:
       - fc://ansible/spec
       - fc://api/spec
       - fc://ansible/example/single
-      {available_example_mcp}
+      - {available_example_mcp}
       - fc://api/content/<keyword>
   available_mcp_tools: |
     Rely on the following MCP tools:
       - initialize_output_dir
       - write_modular_ansible_files
+      - read_workspace_playbook_file
       - validate_yaml_jinja_ast
-      - run_ansible_syntax_chec
+      - run_ansible_syntax_check
 
 ansible_code_reviewer:
   role: "Expert Ansible Automation Code Reviewer & Quality Engineer"
@@ -78,13 +80,12 @@ ansible_code_reviewer:
       2. Call MCP tool 'read_workspace_playbook_file' to load the file content.
       3. Read MCP resource 'fc://ansible/spec' to evaluate FusionCompute Ansible framework mechanisms.
       4. Read MCP resource 'fc://api/spec' to parse global API protocol structures, especially the meaning of each URI and Object ID.
-      6. For each API Chinese name identified in Step 1, read the dynamic MCP resource 'fc://api/content/<keyword>' with the exact API name in Chinese to retrieve targeted parameter tables and HTTP request/response body schemas.
-      7. Precise fc_generic Parameter Audit:
+      5. Precise fc_generic Parameter Audit:
          - fc_url: Verify the URL structure exactly matches the schema. Confirm query parameters are strictly handled on the server side (in the URL).
          - fc_body: Verify ALL mandatory body parameters exist. Ensure JSON/Dict structures match the documented schema payload exactly.
          - fc_method: Must be entirely lowercase.
          - Response Navigation: Ensure any downstream task referencing the API output navigates safely through the nested 'output_variable.ret.rsp' wrapper.
-      8. Populate the ReviewSchema: Transcribe any semantic defects, missing mandatory parameters, or incorrect logic directly into the structured JSON ReviewSchema output. If no errors are found, leave the lists strictly empty.
+      6. Populate the ReviewSchema: Transcribe any semantic defects, missing mandatory parameters, or incorrect logic directly into the structured JSON ReviewSchema output. If no errors are found, leave the lists strictly empty.
   artifact_requirement: |
     - STRICT JSON ENFORCEMENT: Your final output MUST be a valid JSON object strictly matching the provided Pydantic schema. DO NOT generate free-form markdown, DO NOT use conversational text, and DO NOT wrap your response in markdown code blocks. Your output will be parsed programmatically. Any text outside the JSON structure will cause a system crash.
   compliance_rules: |
