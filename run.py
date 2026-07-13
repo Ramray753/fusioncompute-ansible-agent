@@ -1,6 +1,6 @@
 import sys
 # Import the main orchestration function
-from crew_task import run_virtualization_orchestrator
+from crew.crew_task import run_virtualization_orchestrator
 
 # ==============================================================================
 # PURE INTERACTIVE COMMAND-LINE GATEWAY ENTRY POINT

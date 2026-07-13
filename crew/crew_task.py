@@ -6,14 +6,14 @@ from crewai import Crew, Task, Process
 # ==============================================================================
 # IMPORT CENTRALIZED LOGGER & SCHEMAS
 # ==============================================================================
-# Importing logger from our centralized logging module
-from crew_log import logger
-# Re-imported ReviewSchema to enforce JSON structure on Agent 3
-from crew_schema import BlueprintSchema, ReviewSchema
-from crew_agents import create_agents
+# [MODIFIED] Use relative imports for intra-package sibling modules
+from .crew_log import logger
+from .crew_schema import BlueprintSchema, ReviewSchema
+from .crew_agents import create_agents
 
-# Establish absolute project root directory anchor
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# [MODIFIED] Establish absolute project root directory anchor.
+# Added an extra os.path.dirname() to step out of the 'crew/' folder and point to the root.
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Bootstrap environment variables (e.g., API keys)
 load_dotenv()

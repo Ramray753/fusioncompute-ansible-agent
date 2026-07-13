@@ -7,8 +7,8 @@ from datetime import datetime
 # ==============================================================================
 # LOGGING & DIRECTORY INITIALIZATION
 # ==============================================================================
-# Establish absolute project root directory anchor
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# [MODIFIED] Establish absolute project root directory anchor for log file generation.
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOG_DIR = os.path.join(BASE_DIR, "logs")
 
 # Ensure the logs directory exists

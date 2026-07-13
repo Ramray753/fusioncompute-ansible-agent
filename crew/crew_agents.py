@@ -4,13 +4,14 @@ import yaml
 from crewai import Agent
 
 # Ensure the project root is in sys.path to resolve internal modules securely
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from mcp_wrapper.mcp_prompts import _dict_to_xml
-from crew_llm import agent_llm
-from crew_tool import (
+# [MODIFIED] Use relative imports for sibling modules within the 'crew' package
+from .crew_llm import agent_llm
+from .crew_tool import (
     get_role_based_read_tools,
     initialize_output_dir,
     write_modular_ansible_files,

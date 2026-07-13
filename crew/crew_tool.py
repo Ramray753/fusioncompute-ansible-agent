@@ -5,12 +5,12 @@ from crewai.tools import tool
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-# [MODIFIED] Import the centralized logger to ensure all MCP calls 
-# are recorded to both the console and the system timestamped log.
-from crew_log import logger
+# [MODIFIED] Use relative imports for the centralized logger
+from .crew_log import logger
 
-# Establish absolute project root directory anchor
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# [MODIFIED] Establish absolute project root directory anchor.
+# Added an extra os.path.dirname() to step out of the 'crew/' folder and point to the root.
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ==============================================================================
 # ASYNC EXECUTION HELPER (DEFENSIVE PROGRAMMING)
