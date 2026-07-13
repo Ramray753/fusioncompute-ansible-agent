@@ -1,5 +1,3 @@
-# conf/tasks.yaml
-
 architect_task:
   description: |
     Thoroughly analyze the incoming infrastructure request: '{user_request}'.
@@ -11,11 +9,19 @@ coder_task:
     Analyze the execution workflow design blueprint provided by the upstream [Automation Architect].
     Execute the code generation strictly following the Standard Operating Procedure (SOP) and compliance rules defined in your core workflow.
     Translate the structured JSON layout into real production-grade Ansible automation playbook matrices and commit them to local disk storage using your assigned MCP tools.
-  expected_output: "A file system layout execution confirmation verifying that the completed playbook matrices were committed to local disk storage."
+    Crucially, after committing the files, you MUST use your local validation tools to perform a syntax self-check loop to ensure 100% physical syntax correctness before handing over.
+  expected_output: "A file system layout execution confirmation verifying that the completed playbook matrices were committed to local disk storage, passing all syntax self-checks."
 
 reviewer_task:
   description: |
-    Perform a rigorous compliance audit and quality assurance review on the compiled and deployed playbook files.
-    Execute your audit strictly according to the two phases (Physical Syntax Validation and API Semantic Audit) defined in your core workflow.
-    Cross-reference the retrieved code against the [Automation Architect]'s structured JSON design blueprint and ensure all compliance boundaries are met. Correct and commit any necessary fixes.
-  expected_output: "A final compliance receipt validating architectural fidelity, syntax perfection, and rule adherence across all committed automation files."
+    Perform a rigorous API semantic audit and logical quality assurance review on the compiled and deployed playbook files.
+    Cross-reference the retrieved code against the [Automation Architect]'s structured JSON design blueprint and ensure all compliance boundaries are met.
+    Do NOT modify any files directly. You must output your findings purely as a structured JSON object.
+  expected_output: "A strict JSON data object adhering to the ReviewSchema Pydantic model, detailing any semantic or logical errors found."
+
+remediation_task:
+  description: |
+    Analyze the ReviewSchema JSON payload provided by the upstream [Code Reviewer].
+    You must iterate through the errors detailed in the feedback. For each error, use the 'file_name' and 'review_comment' to accurately target and modify the broken files using your write tools.
+    After committing any fixes, you MUST re-run your syntax validation tools to ensure your modifications did not introduce new syntax errors.
+  expected_output: "A final confirmation string verifying that all reviewer feedback has been applied and successfully syntax-checked."

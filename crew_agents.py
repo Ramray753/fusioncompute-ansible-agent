@@ -97,7 +97,10 @@ def create_agents(script_type: int):
         tools=[
             engineer_read_tool, 
             initialize_output_dir,
-            write_modular_ansible_files
+            write_modular_ansible_files,
+            # Add validation tools to empower Agent 2 with internal syntax self-checks
+            validate_yaml_jinja_ast, 
+            run_ansible_syntax_check
         ], 
         verbose=True,
         allow_delegation=False,
@@ -114,14 +117,14 @@ def create_agents(script_type: int):
         backstory=build_xml_backstory(p_reviewer),
         tools=[
             reviewer_read_tool, 
-            write_modular_ansible_files, 
-            read_workspace_playbook_file,
-            validate_yaml_jinja_ast, 
-            run_ansible_syntax_check
+            read_workspace_playbook_file
         ], 
         verbose=True,
         allow_delegation=False,
         llm=agent_llm
     )
     
+    # ==============================================================================
+    # MUST RETURN THE AGENTS TO THE CALLER
+    # ==============================================================================
     return ansible_blueprint_designer, ansible_code_engineer, ansible_code_reviewer
