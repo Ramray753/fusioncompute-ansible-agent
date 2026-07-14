@@ -30,7 +30,7 @@
 
 本项目支持 Windows 和 MacOS。请确保本地已安装 [Python 3.11+](https://www.python.org/downloads/) 和 [Ansible 2.15+](https://docs.ansible.com/projects/ansible/latest/installation_guide/intro_installation.html)。强烈建议使用 [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) 或者 [UV](https://docs.astral.sh/uv/) 管理 Python 环境。
 
-> ⚠️ **注意**：Ansible 官方控制节点原生不支持 Windows 平台。强烈建议 Windows 用户使用 **WSL (Windows Subsystem for Linux)** 安装环境，并直接运行上述 Linux 命令。 如果您已经通过其他方式（如 Cygwin 或特定的 Python 环境）在 Windows 桥接配置了 Ansible，请使用 PowerShell 执行以下操作：
+> ⚠️ **注意**：Ansible 官方控制节点原生不支持 Windows 平台。强烈建议 Windows 用户使用 **WSL (Windows Subsystem for Linux)** 安装环境。 
 
 **步骤 1：安装 Python 依赖**
 
@@ -155,7 +155,7 @@ python run.py
 
 ## 📝 经典提示词样例
 
-> 💡 特别说明：以下提示词样例对应的完整生成产物（含 Ansible 剧本及执行日志）已归档至 ./example 目录，供您对比与参考。
+💡 *特别说明：以下提示词样例对应的完整生成产物（含 Ansible 剧本及执行日志）已归档至 ./example 目录，供您对比与参考。*
 
 
 **Example 1: 单一资源GET操作 - 脚本类型 1（简单任务可以适当降低提示词要求）**
