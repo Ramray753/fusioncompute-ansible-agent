@@ -1,0 +1,129 @@
+- name: FusionCompute Automation - Upload and Execute Custom Script on VM
+  hosts: localhost
+  vars_files:
+    # Global environment configuration file.
+    # Contains infrastructure-level connection parameters such as fc_hostname, fc_username, and fc_password.
+    - ./commons.yml
+
+  vars:
+    user_config:
+      # Please put all user-defined variables here. For example: resource names, resource threshold, etc.
+      # The target VM name to search for and upload the custom script to.
+      vm_name: 'my-target-vm'
+
+  tasks:
+    # =========================================================================
+    # STEP 1: Discover VM by Name and Extract VM ID
+    # =========================================================================
+    # Perform a fuzzy search against the VM list using the user-provided VM name,
+    # then extract the unique VM identifier (last segment of URN) via exact name matching.
+
+    # [Task 1.1] Fuzzy search for VMs whose name contains the user-specified string.
+    - name: "[Task 1.1] Fuzzy Search VM by Name"
+      huawei.fusioncompute.fc_generic:
+        fc_hostname: '{{ fc_hostname }}'
+        fc_username: '{{ fc_username }}'
+        fc_password: '{{ fc_password }}'
+        fc_method: 'get'
+        fc_url: '/vms?name={{ user_config.vm_name }}'
+      register: output_vm_search
+
+    # [Task 1.2] Iterate the returned VM list, locate the entry whose 'name' exactly
+    # matches the user-provided value, and extract the last colon-separated segment
+    # of its 'urn' as the VM ID.
+    - name: "[Task 1.2] Extract VM ID by Exact Name Match"
+      set_fact:
+        vm_id: "{{ (output_vm_search.ret.rsp.vms | selectattr('name', 'equalto', user_config.vm_name) | list | first).urn.split(':') | last }}"
+      when:
+        - output_vm_search.ret.rsp.vms is defined
+        - output_vm_search.ret.rsp.vms | length > 0
+        - (output_vm_search.ret.rsp.vms | selectattr('name', 'equalto', user_config.vm_name) | list | length) > 0
+
+    # =========================================================================
+    # STEP 2: Query VM Details and Determine OS Type
+    # =========================================================================
+    # Retrieve the full VM configuration using the extracted VM ID to obtain
+    # osOptions.osType, which drives downstream script-type branching logic.
+
+    # [Task 2.1] Query the detailed VM information using the extracted VM ID.
+    - name: "[Task 2.1] Query VM Detailed Information by ID"
+      huawei.fusioncompute.fc_generic:
+        fc_hostname: '{{ fc_hostname }}'
+        fc_username: '{{ fc_username }}'
+        fc_password: '{{ fc_password }}'
+        fc_method: 'get'
+        fc_url: '/vms/{{ vm_id }}'
+      register: output_vm_detail
+
+    # [Task 2.2] Parse the VM detail response to extract the osOptions.osType value
+    # and store it as a fact for downstream conditional branching.
+    - name: "[Task 2.2] Extract OS Type from VM Details"
+      set_fact:
+        os_type: "{{ output_vm_detail.ret.rsp.osOptions.osType }}"
+
+    # =========================================================================
+    # STEP 3: Conditionally Set Script Parameters Based on OS Type
+    # =========================================================================
+    # Branching logic: the script content, type, and filename are determined by
+    # whether the guest OS is Linux or Windows.
+
+    # [Task 3.1] When the extracted OS type is 'Linux', set shell script facts.
+    - name: "[Task 3.1] Set Linux Script Facts"
+      set_fact:
+        script_content: 'hostname'
+        script_type: 'sh'
+        script_file_name: 'script.sh'
+      when: os_type == 'Linux'
+
+    # [Task 3.2] When the extracted OS type is 'Windows', set PowerShell script facts.
+    - name: "[Task 3.2] Set Windows Script Facts"
+      set_fact:
+        script_content: 'Get-ComputerInfo'
+        script_type: 'powershell'
+        script_file_name: 'script.ps1'
+      when: os_type == 'Windows'
+
+    # =========================================================================
+    # STEP 4: Upload and Execute the Custom Script
+    # =========================================================================
+    # POST to the uploadAndExecVmScript endpoint with execMode=0 (combined
+    # upload-and-execute), passing the conditionally-determined script parameters.
+    # The response contains taskUrn and taskUri for asynchronous tracking.
+
+    # [Task 4.1] Call the uploadAndExecVmScript API to upload and execute the
+    # custom script on the target VM.
+    - name: "[Task 4.1] Upload and Execute Custom Script on VM"
+      huawei.fusioncompute.fc_generic:
+        fc_hostname: '{{ fc_hostname }}'
+        fc_username: '{{ fc_username }}'
+        fc_password: '{{ fc_password }}'
+        fc_method: 'post'
+        fc_url: '/vms/{{ vm_id }}/action/uploadAndExecVmScript'
+        fc_body:
+          vmId: '{{ vm_id }}'
+          execMode: 0
+          scriptContent: '{{ script_content }}'
+          scriptType: '{{ script_type }}'
+          scriptFileName: '{{ script_file_name }}'
+      register: output_upload_script
+
+    # =========================================================================
+    # STEP 5: Wait for Async Task and Display Results
+    # =========================================================================
+    # Invoke the reusable wait_fc_system_task.yml to block until the asynchronous
+    # script upload-and-execute task finishes, then print the final task status.
+
+    # [Task 5.1] Poll the asynchronous task using the reusable polling module
+    # until it reaches a terminal state (success or failure).
+    - name: "[Task 5.1] Wait for Script Execution Task to Complete"
+      include_tasks: wait_fc_system_task.yml
+      vars:
+        async_output: "{{ output_upload_script }}"
+        task_id_suffix: "upload_script"
+
+    # [Task 5.2] Output the completed task query result, which contains the
+    # execution status, progress, entity URN, and timing details.
+    - name: "[Task 5.2] Print Script Execution Result"
+      debug:
+        msg: "{{ _sys_query_output_upload_script }}"
+      when: _sys_query_output_upload_script is defined

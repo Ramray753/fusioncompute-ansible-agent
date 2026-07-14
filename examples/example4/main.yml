@@ -1,0 +1,63 @@
+- name: FusionCompute - Batch Query VM Tools Status
+  hosts: localhost
+  vars_files:
+    - ./commons.yml
+
+  vars:
+    user_config:
+      # Path to the CSV file containing VM names (one per line, no header)
+      task_1_vm_names_csv: './vm_names.csv'
+
+  tasks:
+  # =========================================================================
+  # PHASE 1 - Read CSV and build dynamic inventory for parallel execution
+  # =========================================================================
+  # [Task 1.1] Read the user-specified CSV file containing VM names (one per line, no header)
+  # and parse them into a list for downstream processing.
+  - name: '[Task 1.1] Read CSV file lines using built-in file lookup'
+    set_fact:
+      vm_list: "{{ lookup('ansible.builtin.file', user_config.task_1_vm_names_csv).splitlines()[:] }}"
+
+  # [Task 1.2] Iterate over the VM name list and use add_host to populate a
+  # dynamic inventory group 'dynamic_vms' to enable controlled parallel execution.
+  - name: '[Task 1.2] Dynamically add VMs to a temporary inventory group'
+    ansible.builtin.add_host:
+      name: "{{ item | trim }}"
+      groups: dynamic_vms
+    loop: "{{ vm_list }}"
+    when: item | trim | length > 0
+
+# =========================================================================
+# PHASE 2 - Concurrent per-VM query with controlled parallelism (serial: 5)
+# =========================================================================
+# [Task 2.1] Execute the second play targeting the dynamic_vms group with serial=5
+# concurrency, including the standalone query_vm_tools.yml for each VM name.
+- name: '[Task 2.1] Include per-VM query task file for concurrent execution'
+  hosts: dynamic_vms
+  gather_facts: no
+  connection: local
+  serial: 5
+  vars_files:
+    - ./commons.yml
+  tasks:
+    - name: Include per-VM Tools query logic for the current batch
+      ansible.builtin.include_tasks: query_vm_tools.yml
+      vars:
+        vm_name_item: "{{ inventory_hostname }}"
+
+# =========================================================================
+# PHASE 3 - Aggregate per-VM temporary result files into final CSV
+# =========================================================================
+# [Task 3.1] Execute the Python aggregation script to collect all per-VM temp CSV
+# files, prepend the header row, and write the merged output to ./vm_tools.csv.
+- name: '[Task 3.1] Aggregate all temporary result files into the final output CSV'
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Run Python aggregation script to merge temp CSV files
+      ansible.builtin.script: ./aggregate_results.py
+      register: output_aggregation
+
+    - name: Print aggregation script output
+      debug:
+        msg: '{{ output_aggregation.stdout_lines }}'

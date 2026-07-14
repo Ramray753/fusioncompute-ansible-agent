@@ -1,0 +1,49 @@
+# =========================================================================
+# PER-DATASTORE PROCESSING LOGIC
+# =========================================================================
+- name: '[Task 2.1] Fuzzy search datastore by name for {{ ds_name_item }}'
+  huawei.fusioncompute.fc_generic:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    fc_method: 'get'
+    fc_url: '/datastores?name={{ ds_name_item }}'
+  register: output_ds_search
+
+- name: '[Task 2.2] Extract exact datastore ID and URN for {{ ds_name_item }}'
+  set_fact:
+    ds_urn: "{{ (output_ds_search.ret.rsp.datastores | selectattr('name', 'equalto', ds_name_item) | list | first).urn }}"
+    ds_id: "{{ (output_ds_search.ret.rsp.datastores | selectattr('name', 'equalto', ds_name_item) | list | first).urn.split(':') | last }}"
+  when:
+    - output_ds_search.ret.rsp.datastores is defined
+    - output_ds_search.ret.rsp.datastores | length > 0
+    - (output_ds_search.ret.rsp.datastores | selectattr('name', 'equalto', ds_name_item) | list | length) > 0
+
+- name: '[Task 2.3] Query detailed datastore information by ID for {{ ds_name_item }}'
+  huawei.fusioncompute.fc_generic:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    fc_method: 'get'
+    fc_url: '/datastores/{{ ds_id }}'
+  register: output_ds_detail
+  when: ds_id is defined
+
+- name: '[Task 2.4] Extract key datastore properties for {{ ds_name_item }}'
+  set_fact:
+    ds_su_urn: "{{ output_ds_detail.ret.rsp.suUrn }}"
+    ds_name: "{{ output_ds_detail.ret.rsp.name }}"
+    ds_storage_type: "{{ output_ds_detail.ret.rsp.storageType }}"
+    ds_use_type: "{{ {'advanceSan': 0, 'NAS': 1, 'LOCAL': 1, 'DSWARE': 0, 'LUN': 1}[output_ds_detail.ret.rsp.storageType] | default(1) | int }}"
+  when:
+    - ds_id is defined
+    - output_ds_detail.ret.rsp is defined
+
+- name: '[Task 2.5] Inner loop — associate datastore {{ ds_name_item }} with each host'
+  ansible.builtin.include_tasks: associate_host_to_datastore.yml
+  loop: '{{ host_list }}'
+  loop_control:
+    loop_var: host_name_item
+  when:
+    - ds_id is defined
+    - host_name_item | trim | length > 0

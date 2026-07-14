@@ -1,0 +1,110 @@
+# =========================================================================
+# Asynchronous Infrastructure Task Execution and Guest OS Customization Tracker
+# =========================================================================
+# This decoupled task sequence tracks asynchronous infrastructure operations.
+# It resolves a critical automation challenge: tracking both the user-initiated 
+# API request and the subsequent internal hypervisor guest OS customization jobs.
+
+- name: Extract Task ID
+  set_fact:
+    # FusionCompute returns a absolute URI for tracking resources (e.g., "/tasks/105").
+    # The 'basename' filter strips the leading path to isolate the raw alphanumeric identifier string.
+    _current_task_id: "{{ async_output.ret.rsp.taskUri | basename }}"
+
+- name: Print Task ID
+  debug:
+    msg: "{{ _current_task_id }}"
+
+# Block and poll until the initial user-triggered workflow completes its execution lifecycle.
+- name: Wait Until Primary Task Completed
+  huawei.fusioncompute.fc_task_manager:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    action: 'complete'
+    task_id: '{{ _current_task_id }}'
+    fc_wait_timeout: '{{ fc_wait_timeout }}'
+    fc_pull_interval: '{{ fc_pull_interval }}'
+  register: _primary_query_output_raw
+
+# Dynamically maps the raw execution state to a globally isolated variable to prevent state corruption.
+- name: Save Unique Primary Task Output Fact
+  set_fact:
+    "_primary_query_output_{{ task_id_suffix | default('shared') }}": "{{ _primary_query_output_raw }}"
+
+- name: Print Primary Task Output
+  debug:
+    msg: "{{ vars['_primary_query_output_' ~ (task_id_suffix | default('shared'))] }}"
+
+- name: Extract Entity URN
+  set_fact:
+    # Captures the Uniform Resource Name (URN) of the provisioned infrastructure asset (e.g., the specific VM URN).
+    _entity_urn: "{{ vars['_primary_query_output_' ~ (task_id_suffix | default('shared'))].ret.rsp.entityUrn }}"
+
+- name: Print Entity URN
+  debug:
+    msg: '{{ _entity_urn }}'
+
+# When deploying templates with explicit guest configurations, the platform decouples the initial clone 
+# from the internal OS setup phase. This step queries active system jobs to discover hidden scheduling operations.
+- name: Get System Scheduling Task ID
+  huawei.fusioncompute.fc_task_manager:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    action: 'pagination' 
+    limit: 3
+    offset: 0
+    status: 'running'
+  register: _pagination_output_raw
+
+# Dynamically registers the active background orchestration array state.
+- name: Save Unique Pagination Output Fact
+  set_fact:
+    "_pagination_output_{{ task_id_suffix | default('shared') }}": "{{ _pagination_output_raw }}"
+
+- name: Print Pagination Output
+  debug:
+    msg: "{{ vars['_pagination_output_' ~ (task_id_suffix | default('shared'))] }}"
+
+- name: Extract System Scheduling Task ID
+  set_fact:
+    # Performs multi-attribute filtering on the pagination response payload:
+    # 1. Matches the specific asset URN extracted from the primary creation event.
+    # 2. Matches the internal system daemon account security principal ('-_system').
+    # 3. Matches the discrete runtime operation type designating guest specification ingestion ('InjectCustomizationTask').
+    _sys_task_id: "{{ vars['_pagination_output_' ~ (task_id_suffix | default('shared'))].ret.rsp.tasks 
+                | selectattr('entityUrn', 'equalto', _entity_urn) 
+                | selectattr('user', 'equalto', '-_system') 
+                | selectattr('type', 'equalto', 'InjectCustomizationTask') 
+                | map(attribute='taskId') 
+                | first | default(none) }}"
+
+- name: Print System Scheduling Task ID
+  debug:
+    msg: "{{ _sys_task_id }}"
+
+# This conditional block executes only if a decoupled guest configuration injection signature was verified.
+# It ensures the automation layer halts until the virtual machine OS initialization is completely finished.
+- name: Wait Until System Scheduling Task Completed
+  huawei.fusioncompute.fc_task_manager:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    action: 'complete'
+    task_id: '{{ _sys_task_id }}'
+    fc_wait_timeout: '{{ fc_wait_timeout }}'
+    fc_pull_interval: '{{ fc_pull_interval }}'
+  register: _sys_query_output_raw
+  when: _sys_task_id is defined and _sys_task_id | string | length > 0
+
+# Conditionally registers the final customization confirmation block payload.
+- name: Save Unique System Scheduling Task Output Fact
+  set_fact:
+    "_sys_query_output_{{ task_id_suffix | default('shared') }}": "{{ _sys_query_output_raw }}"
+  when: _sys_task_id is defined and _sys_task_id | string | length > 0
+
+- name: Print System Scheduling Task Output
+  debug:
+    msg: "{{ vars['_sys_query_output_' ~ (task_id_suffix | default('shared'))] }}"
+  when: _sys_task_id is defined and _sys_task_id | string | length > 0 and vars['_sys_query_output_' ~ (task_id_suffix | default('shared'))] is defined

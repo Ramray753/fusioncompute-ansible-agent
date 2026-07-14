@@ -1,0 +1,72 @@
+# =========================================================================
+# PER-HOST DATASTORE ASSOCIATION LOGIC
+# =========================================================================
+# This file is invoked sequentially for each host name to associate the
+# current datastore (ds_name, ds_su_urn, ds_use_type) with the target host.
+# Inherits facts set by process_single_datastore.yml: ds_su_urn, ds_name, ds_use_type.
+
+# =========================================================================
+# [Task 3.1] Fuzzy search host by name.
+# Corresponding API: 查询主机列表
+# =========================================================================
+- name: '[Task 3.1] Fuzzy search host by name for {{ host_name_item }}'
+  huawei.fusioncompute.fc_generic:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    fc_method: 'get'
+    fc_url: '/hosts?name={{ host_name_item }}'
+  register: output_host_search
+
+# =========================================================================
+# [Task 3.2] Extract exact host URN from fuzzy search result.
+# Uses selectattr for exact name matching. The full URN (format:
+# urn:sites:{site_id}:hosts:{host_id}) is used directly as hostUrn.
+# =========================================================================
+- name: '[Task 3.2] Extract exact host URN for {{ host_name_item }}'
+  set_fact:
+    host_urn: "{{ (output_host_search.ret.rsp.hosts | selectattr('name', 'equalto', host_name_item) | list | first).urn }}"
+  when:
+    - output_host_search.ret.rsp.hosts is defined
+    - output_host_search.ret.rsp.hosts | length > 0
+    - (output_host_search.ret.rsp.hosts | selectattr('name', 'equalto', host_name_item) | list | length) > 0
+
+# =========================================================================
+# [Task 3.3a] Build request body dict with integer-typed useType.
+# Jinja2 dict() constructor preserves the integer type of ds_use_type
+# (already | int-filtered in Task 2.4), ensuring the downstream JSON
+# serialization produces {"useType": 1} (integer), not {"useType": "1"}.
+# =========================================================================
+- name: '[Task 3.3a] Assemble typed request body for POST /datastores'
+  set_fact:
+    create_ds_body: "{{ dict(hostUrn=host_urn, storageUnitUrn=ds_su_urn, name=ds_name, useType=ds_use_type) }}"
+  when: host_urn is defined
+
+# =========================================================================
+# [Task 3.3b] Create datastore — POST /datastores with pre-typed body.
+# Corresponding API: 创建数据存储
+# The response includes taskUrn for asynchronous task tracking.
+# =========================================================================
+- name: '[Task 3.3b] Create datastore — associate {{ ds_name }} with host {{ host_name_item }}'
+  huawei.fusioncompute.fc_generic:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    fc_method: 'post'
+    fc_url: '/datastores'
+    fc_body: '{{ create_ds_body }}'
+  register: output_create_ds
+  when: host_urn is defined
+
+# =========================================================================
+# [Task 3.4] Track and wait for datastore association task completion.
+# Invokes the standard wait_fc_system_task.yml wrapper to poll the
+# asynchronous task until completion, ensuring the host association
+# operation is fully finished before moving to the next host.
+# =========================================================================
+- name: '[Task 3.4] Track and wait for datastore association task for {{ host_name_item }}'
+  include_tasks: wait_fc_system_task.yml
+  vars:
+    async_output: '{{ output_create_ds }}'
+    task_id_suffix: 'task_3_3'
+  when: output_create_ds is not skipped

@@ -1,0 +1,9 @@
+# =========================================================================
+# FusionCompute Global Infrastructure Environment Configuration
+# =========================================================================
+fc_hostname: '192.168.100.100'
+fc_username: 'api_user'
+fc_password: 'P@ssw0rd123'
+fc_wait_timeout: 180
+fc_pull_interval: 5
+fc_concurrency: 10

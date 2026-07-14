@@ -1,0 +1,63 @@
+# =========================================================================
+# Per-VM Tools Status Query Logic
+# =========================================================================
+# This file is invoked concurrently for each VM name parsed from the CSV input.
+# It performs a fuzzy search to resolve the VM name to an ID, queries detailed
+# VM information, extracts the Tools running status and version, and writes a
+# single-line CSV record to a per-VM temporary file for later aggregation.
+
+# [Task 2.2] Call the FusionCompute REST API to perform a fuzzy search for VMs
+# matching the current VM name. This retrieves the VM's URN/ID for subsequent
+# detailed query.
+- name: '[Task 2.2] GET VM list by fuzzy name search'
+  huawei.fusioncompute.fc_generic:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    fc_method: 'get'
+    fc_url: '/vms?name={{ vm_name_item }}'
+  register: output_vm_search
+
+# [Task 2.3] From the fuzzy search response, iterate and match the exact VM name
+# using selectattr, then extract the VM ID (last segment of the URN). Only the
+# first match is considered if multiple exist.
+- name: '[Task 2.3] Extract VM ID with exact name match for {{ vm_name_item }}'
+  set_fact:
+    _current_vm_id: "{{ (output_vm_search.ret.rsp.vms | selectattr('name', 'equalto', vm_name_item) | list | first).urn.split(':') | last }}"
+  when:
+    - output_vm_search.ret.rsp.vms is defined
+    - output_vm_search.ret.rsp.vms | length > 0
+    - (output_vm_search.ret.rsp.vms | selectattr('name', 'equalto', vm_name_item) | list | length) > 0
+
+# [Task 2.4] Query the detailed information of the specific VM using its ID.
+# This returns the full VM configuration including Tools running status and version.
+- name: '[Task 2.4] GET VM detailed information by VM ID'
+  huawei.fusioncompute.fc_generic:
+    fc_hostname: '{{ fc_hostname }}'
+    fc_username: '{{ fc_username }}'
+    fc_password: '{{ fc_password }}'
+    fc_method: 'get'
+    fc_url: '/vms/{{ _current_vm_id }}'
+  register: output_vm_detail
+  when: _current_vm_id is defined
+
+# [Task 2.5] Parse the detailed VM response to isolate pvDriverStatus (Tools运行状态)
+# and toolsVersion (Tools版本), then construct the data payload for the CSV record.
+- name: '[Task 2.5] Extract Tools running status and version from VM details'
+  set_fact:
+    _tools_status: "{{ output_vm_detail.ret.rsp.pvDriverStatus }}"
+    _tools_version: "{{ output_vm_detail.ret.rsp.toolsVersion }}"
+    _vm_id_for_csv: "{{ _current_vm_id }}"
+  when:
+    - _current_vm_id is defined
+    - output_vm_detail.ret.rsp is defined
+
+# [Task 2.6] Write the extracted VM name, ID, Tools status, and Tools version as a
+# single CSV line to a uniquely-named temporary file under /tmp for later aggregation.
+- name: '[Task 2.6] Write per-VM result line to a temporary CSV file'
+  ansible.builtin.copy:
+    content: "{{ vm_name_item }},{{ _vm_id_for_csv }},{{ _tools_status }},{{ _tools_version }}\n"
+    dest: "/tmp/vm_tools_{{ inventory_hostname | regex_replace('[^a-zA-Z0-9._-]', '_') }}.csv"
+  when:
+    - _current_vm_id is defined
+    - output_vm_detail.ret.rsp is defined
